@@ -9,6 +9,8 @@ Un tiro legal (sin ruptura) es aquel en el que la bola blanca golpea primero una
 
 Después de una falta, el jugador infractor efectivamente perderá un turno y le dará al oponente dos visitas. Estos tiros libres deben ser ejecutados desde donde terminó la bola blanca después de la falta de su oponente, con dos excepciones: la bola blanca fue embocada, en cuyo caso el jugador entrante debe realizar su tiro desde atrás; o el jugador entrante se ha quedado en un billar de falta, en cuyo caso puede designar una bola libre, mover la bola blanca para bloquear y jugar desde allí o de hecho continuar con normalidad (es decir, tirar a una de sus propias bolas).
 
-bolas de billar: miden 51mm
+bolas de billar: miden 51mm diámetro.
 
-mesa de billar: tiene seis bolsillos, en cada esquina y en el centro de las bandas largas. Los amortiguadores (los bordes para que los rebotes sean lo más elásticos posibles) tienen un grosor de 36.5 mm
+bola blanca: 48mm
+
+mesa de billar: tiene seis bolsillos, en cada esquina y en el centro de las bandas largas. Los amortiguadores (los bordes para que los rebotes sean lo más elásticos posibles) tienen un grosor de 36.5 mm  (Mide 2.12m x 1.06m), los bolsillos miden un poco más grandes que las bolas.
