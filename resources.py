@@ -11,6 +11,34 @@ import grafica.easy_shaders as es
 from shapes3d import *
 from numpy import random as rd
 
+# CLASE CON LOS ELEMENTOS DE LA MESA
+class Bola:
+    def __init__(self, pipeline, position):
+        # Figura:
+        self.model = None
+        self.diam = 0.051 # Diametro de las bolas (Para todas las bolas de número, la bola blanca mide 0.048)
+        self.pipeline = pipeline # Pipeline de la bola
+        self.position = position
+        self.velocity = 0 # Las pelotas siempre comienzan con velocidad 0
+
+    def setModel(self, model):
+        # Define la gpushape de la bola
+        self.model = model
+
+    def move(self, pos, vel):
+        # Se modifican la velocidad y posición
+        self.position = pos
+        self.velocity = vel
+
+    def draw(self):
+        # Dibujar la bola
+        glUniformMatrix4fv(glGetUniformLocation(self.pipeline.shaderProgram, "transform"), 1, GL_TRUE,
+            tr.translate(self.position[0], self.position[1], 0.0)
+        )
+        self.pipeline.drawCall(self.model)
+
+
+
 # Cámara en tercera persona
 class ThirdCamera:
     def __init__(self, x, y , z):
@@ -63,20 +91,6 @@ class FirstCamera:
             self.up
         )
         return viewMatrix
-
-class SlideCamera:
-    def __init__(self, eye, at):
-        self.eye = eye
-        self.at = at
-        self.up = np.array([0, 0, 1])
-
-    def update_view(self):
-        viewMatrix = tr.lookAt(
-            self.eye,
-            self.at,
-            self.up
-        )
-        return viewMatrix
         
 
     
@@ -119,21 +133,6 @@ class Controller:
     # Función que entrega el ángulo theta
     def getThetaCamera(self):
         return self.camera.theta
-
-    # Función que le entrega el mapa al controlador
-    def setMap(self, suelo, techo):
-        # Se calcula si es posible avanzar en ciertas coordenadas
-        (N, M) = (suelo.N, suelo.M)
-        sueloV = np.array(suelo.mesh.points())
-        techoV = np.array(techo.points())
-        x = sueloV[: , 0]
-        y = sueloV[: , 1]
-        zs = sueloV[:, 2]
-        zt = techoV[:, 2]
-
-        
-        self.suelo = suelo
-        self.techo = techo
 
     # Función que detecta que tecla se está presionando
     def on_key(self, window, key, scancode, action, mods):
@@ -209,68 +208,43 @@ class Controller:
                 self.rightClickOn = False
 
     #Funcion que recibe el input para manejar la camara y el tipo de esta, incluye ek movimiento del personaje
-    def update_camera(self, delta, curva):
+    def update_camera(self, delta):
         # Selecciona la cámara a utilizar
-        if self.is_t_pressed and self.camara != 2:
-            eye, at = curva.camera(delta, self)
-            self.camera = SlideCamera(eye, at)
-            self.camara = 2
-        elif not self.is_t_pressed:
-            if self.is_a_pressed and self.camara != 1:
-                x = self.camera.at[0]
-                y = self.camera.at[1]
-                z = self.camera.at[2]-0.1
-                self.camera = FirstCamera(x, y, z)
-                self.camara = 1
-            elif not self.is_a_pressed and self.camara != 3:
-                x = self.camera.eye[0]
-                y = self.camera.eye[1]
-                z = self.camera.eye[2]
-                self.camera = ThirdCamera(x, y, z)
-                self.camara = 3
+        if self.is_a_pressed and self.camara != 1:
+            x = self.camera.at[0]
+            y = self.camera.at[1]
+            z = self.camera.at[2]-0.1
+            self.camera = FirstCamera(x, y, z)
+            self.camara = 1
+        elif not self.is_a_pressed and self.camara != 3:
+            x = self.camera.eye[0]
+            y = self.camera.eye[1]
+            z = self.camera.eye[2]
+            self.camera = ThirdCamera(x, y, z)
+            self.camara = 3
 
-            #suelo = self.suelo
-            #(N, M) = suelo.shape
-            #techo = self.techo
-            #n = np.ceil(N/2)
-            #m = np.ceil(M/2)
+        direction = self.camera.at - self.camera.eye
+        theta = -self.mousePos[0] * 2 * np.pi - np.pi/2
 
-            direction = self.camera.at - self.camera.eye
-            dx, dy = direction[0]/3, direction[1]/3
-            theta = -self.mousePos[0] * 2 * np.pi - np.pi/2
+        mouseY = self.mousePos[1]
+        phi = mouseY * (np.pi/2-0.01) + np.pi/2
 
-            mouseY = self.mousePos[1]
-            phi = mouseY * (np.pi/2-0.01) + np.pi/2
+        if self.camara == 3:
+            if self.leftClickOn:
+                self.camera.at += direction * delta
 
-            if self.camara == 3:
-                #x = self.camera.at[0]+n
-                #y = self.camera.at[1]+m
-                if self.leftClickOn:# and techo[int(np.round(x+dx))][int(np.round(y+dy))]>=self.camera.at[2]:
-                    self.camera.at += direction * delta
+            if self.rightClickOn:
+                self.camera.at -= direction * delta
 
-                if self.rightClickOn:# and techo[int(np.round(x-dx))][int(np.round(y-dy))]>=self.camera.at[2]:
-                    self.camera.at -= direction * delta
-            
-                #x = int(self.camera.at[0]+n)
-                #y = int(self.camera.at[1]+m)
-                #self.camera.at[2] = suelo[x][y]+1.2
+        elif self.camara == 1:
+            if self.leftClickOn:
+                self.camera.eye += direction * delta
 
-            elif self.camara == 1:
-                #x = self.camera.at[0]+n
-                #y = self.camera.at[1]+m
-                if self.leftClickOn:# and techo[int(np.round(x+dx))][int(np.round(y+dy))]>=self.camera.eye[2]+0.5:
-                    self.camera.eye += direction * delta
+            if self.rightClickOn:
+                self.camera.eye -= direction * delta
+            self.camera.set_phi(phi)
 
-                if self.rightClickOn:# and techo[int(np.round(x-dx))][int(np.round(y-dy))]>=self.camera.eye[2]+0.5:
-                    self.camera.eye -= direction * delta
-                self.camera.set_phi(phi)
-
-                #x = int(self.camera.eye[0]+n)
-                #y = int(self.camera.eye[1]+m)
-                #self.camera.eye[2] = suelo[x][y]+0.7
-
-
-            self.camera.set_theta(theta)
+        self.camera.set_theta(theta)
 
     def collision(self, cargas):
         # Funcion para detectar las colisiones con las cargas
@@ -341,21 +315,7 @@ class Iluminacion:
         glUniform3fv(glGetUniformLocation(Pipeline.shaderProgram, strPos), 1, pos)
         glUniform3f(glGetUniformLocation(Pipeline.shaderProgram, strLa), 0.1, 0.1, 0.1)
         glUniform3f(glGetUniformLocation(Pipeline.shaderProgram, strLd), r*0.7, g*0.7, b*0.7)
-        glUniform3f(glGetUniformLocation(Pipeline.shaderProgram, strLs), r, g, b)
-        
-
-# Clase para guardar datos
-class Carga():
-    # Clase para contener las caracteristicas de un objeto que representa una carga 
-    def __init__(self, posx, posy, size):
-        self.pos = [posx, posy]
-        self.radio = 0.4
-        self.size = size
-        self.model = None
-    
-    def set_model(self, new_model):
-        self.model = new_model
-        
+        glUniform3f(glGetUniformLocation(Pipeline.shaderProgram, strLs), r, g, b)      
 
 
 # Funciones
@@ -494,18 +454,3 @@ def readOBJ(filename, color = None):
             index += 3        
 
         return bs.Shape(vertexData, indices)
-
-def orientacion(pos, nextPos): # Repetimos el procedimiento de la transformación vista para obtener la orientación dentro del tobogán, se desconsidera tubos en total "picada"
-        dir = (nextPos- pos)
-        y = dir[1]
-        x = dir[0]
-        theta = np.arctan2(y,x)
-        z = dir[2]
-        alpha = np.arctan2(z, np.sqrt(x*x+y*y))
-        return theta , alpha
-
-def adaptarPos(vector, radio, phi, theta):
-    """ modifica el vector para que se encuentren a la altura adecuada dentro del cilindro"""
-    vector[0] += radio*np.sin(phi)*np.cos(theta)
-    vector[1] += radio*np.sin(phi)*np.sin(theta)
-    vector[2] -= radio * np.cos(phi)

@@ -29,6 +29,8 @@ norm2 = os.path.join(assetsDirectory, "wood2_NRM.jpg")
 wood3 = os.path.join(assetsDirectory, "wood3.jpg")
 norm3 = os.path.join(assetsDirectory, "wood3_NRM.jpg")
 
+texBola1 = os.path.join(assetsDirectory, "bola1.png")
+
 # Convenience function to ease initialization
 def createGPUShape(pipeline, shape):
     gpuShape = es.GPUShape().initBuffers()
@@ -121,284 +123,6 @@ def Curveposition(typeCurve, V1, V2, V3, V4, t):
     T = generateT(t)
     curve = np.matmul(G, M)
     return np.matmul(curve, T).T
-
-
-
-######################################################
-# Todo esto era para la tarea de cuevas
-"""
-######## CREANDO UNA MALLA FRACTAL #####
-def fractalMesh(mesh, n):
-    k = 0
-    while k<n:
-        newMesh = om.TriMesh()
-        for face in mesh.faces():
-            vertexs = list(mesh.fv(face))
-            vertex1 = np.array(mesh.point(vertexs[0]))
-            vertex2 = np.array(mesh.point(vertexs[1]))
-            vertex3 = np.array(mesh.point(vertexs[2]))
-
-            vertex12 = (vertex1 + vertex2)/2
-            vertex23 = (vertex2 + vertex3)/2
-            vertex13 = (vertex1 + vertex3)/2
-
-            vertex12[2] = (rd.rand()-0.5)*0.1 + vertex12[2]
-            vertex23[2] = (rd.rand()-0.5)*0.1 + vertex23[2]
-            vertex13[2] = (rd.rand()-0.5)*0.1 + vertex13[2]
-
-            v1 = newMesh.add_vertex(vertex1)
-            v12 = newMesh.add_vertex(vertex12)
-            v2 = newMesh.add_vertex(vertex2)
-            v23 = newMesh.add_vertex(vertex23)
-            v3 = newMesh.add_vertex(vertex3)
-            v13 = newMesh.add_vertex(vertex13)
-
-            newMesh.add_face(v1, v12, v13)
-            newMesh.add_face(v12, v13, v23)
-            newMesh.add_face(v13, v23, v3)
-            newMesh.add_face(v12, v2, v23)
-            #newMesh.add_face(v1, v2, v3)
-
-        mesh = newMesh
-        k+=1
-        del newMesh
-
-    return mesh
-
-
-def caveMesh(matriz):
-    Se crea las 2 mallas de polígonos correspondiente al suelo y el techo, por conveniencia, se utilizarán celdas
-    de 5x5 metros cuadrados. (Considerando que los ejes se encontraran efectivamente en metros)
-    De esta manera, Lara será capaz de moverse por la celda.
-    suelo = om.TriMesh()
-    techo = om.TriMesh()
-    # Se obtienen las dimensiones de la matriz
-    (N, M, k) = matriz.shape
-    n= N//2
-    m= M//2
-    # Se crean arreglos que corresponderan al eje x e y de la cueva, de N+1 y M+1 vértices cada uno, de modo que
-    # cada celda de la matriz sea generada por un cuadrado de 4 vértices
-    if N%2!=0:
-        xs = np.linspace(-3*N-n, 3*N+n, N*7)
-    else:
-        xs = np.linspace(-3*N-n, 3*N+n-1, N*7)
-    if M%2!=0:
-        ys = np.linspace(-3*M-m, 3*M+m, M*7)
-    else:
-        ys = np.linspace(-3*M-m, 3*M+m-1, M*7)
-
-    
-
-    # largo de arregles
-    lenXS = len(xs)-1
-    lenYS = len(ys)-1
-
-    # Se generan los vértices de la malla, utilizando las alturas dadas
-    for i in range(lenXS):
-        x = xs[i]
-        im = i//7   # Transforma el índice en su correspondiente celda de la matriz
-        a = False
-        for j in range(lenYS):
-            y = ys[j]
-            jm = j//7 # Transforma el índice en su correspondiente celda de la matriz
-            b = False
-            z0 = matriz[im][jm][0]
-            z1 = matriz[im][jm][1]
-            if (i+1)//7 != im:
-                Im = im+1
-                z0 = (z0 + matriz[Im][jm][0])/2
-                z1 = (z1 + matriz[Im][jm][1])/2
-                a = True
-            if (j+1)//7 != jm:
-                Jm = jm+1
-                z0 = (z0 + matriz[im][Jm][0])/2
-                z1 = (z1 + matriz[im][Jm][1])/2
-                b = True
-            if a and b:
-                z0 = (matriz[im][jm][0] + matriz[im][Jm][0] + matriz[Im][Jm][0] + matriz[Im][jm][0])/4
-                z1 = (matriz[im][jm][1] + matriz[im][Jm][1] + matriz[Im][Jm][1] + matriz[Im][jm][1])/4
-            
-            # Condición borde, para cerrar las paredes y que no se pueda salir al vacío
-            if i==0 or j==0 or i==lenXS-1 or j==lenYS-1:
-                z1 = z0
-
-            # Agregamos el vértice a la malla correspondiente
-            suelo.add_vertex([x, y, z0])
-            techo.add_vertex([x, y, z1])
-
-    # Se calcula el índice de cada punto (i, j) de la forma:
-    index = lambda i, j: i*lenYS + j
-    # Obtenemos los vertices de cada malla, y agregamos las caras
-    vertexsuelo = list(suelo.vertices())
-    vertextecho = list(techo.vertices())
-
-    # Creamos las caras para esta malla (Y usar esta orientación para los factoriales)
-    for i in range(lenXS-1):
-        for j in range(lenYS-1):
-            # los índices:
-            isw = index(i,j)
-            ise = index(i+1,j)
-            ine = index(i+1,j+1)
-            inw = index(i,j+1)
-            # Identificar vértices
-            Vsw = vertexsuelo[isw]
-            Vse = vertexsuelo[ise]
-            Vne = vertexsuelo[ine]
-            Vnw = vertexsuelo[inw]
-            # Se agregan las caras
-            suelo.add_face(Vsw, Vse, Vne)
-            suelo.add_face(Vne, Vnw, Vsw)
-            # Identificar vértices
-            Vsw = vertextecho[isw]
-            Vse = vertextecho[ise]
-            Vne = vertextecho[ine]
-            Vnw = vertextecho[inw]
-            # Se agregan las caras
-            techo.add_face(Vsw, Vse, Vne)
-            techo.add_face(Vne, Vnw, Vsw)
-
-    # No alcancé a arreglar esto a tiempo para la entrega de esta tarea
-    # Se aplican fractales a la malla
-    fractal = 0
-    sueloMesh = fractalMesh(suelo, fractal)
-    techoMesh = fractalMesh(techo, fractal)
-    lenXS += (lenXS-1)*(2**fractal -1)
-    lenYS += (lenYS-1)*(2**fractal -1)
-    
-    index = lambda i, j: i*lenYS + j
-
-    # Obtenemos los vertices de cada malla, y agregamos las caras
-    vertexsuelo = list(sueloMesh.vertices())
-    vertextecho = list(techoMesh.vertices())
-
-    # Se generan los nuevos mesh que contienen las texturas (Se rehace ya que cada hay vértices que contienen
-    # 4 coordenadas de texturas)
-    sueloMeshtex = om.TriMesh()
-    techoMeshtex = om.TriMesh()
-    sueloMeshtex.request_vertex_texcoords2D()
-    techoMeshtex.request_vertex_texcoords2D()
-
-    indexMat = 7 + 6*(2**fractal -1)
-
-    # Se crean las caras para cada cuadrado de la celda
-    for i in range(lenXS-1):
-        im = (i+1)//indexMat
-        for j in range(lenYS-1):
-            jm = (j+1)//indexMat
-            # los índices:
-            isw = index(i,j)
-            ise = index(i+1,j)
-            ine = index(i+1,j+1)
-            inw = index(i,j+1)
-            # Coordenadas de texturas
-            indice = matriz[im][jm][2]
-            tx = 1/12 * (indice)
-            tX = 1/12 * (indice+1)
-            tsw = [tx, 1]
-            tse = [tX, 1]
-            tne = [tX, 0]
-            tnw = [tx, 0]
-            # Identificar vértices
-            vsw = vertexsuelo[isw]
-            vse = vertexsuelo[ise]
-            vne = vertexsuelo[ine]
-            vnw = vertexsuelo[inw]
-            # Agregar vertices a la nueva malla
-            Vsw = sueloMeshtex.add_vertex(sueloMesh.point(vsw).tolist())
-            Vse = sueloMeshtex.add_vertex(sueloMesh.point(vse).tolist())
-            Vne = sueloMeshtex.add_vertex(sueloMesh.point(vne).tolist())
-            Vnw = sueloMeshtex.add_vertex(sueloMesh.point(vnw).tolist())
-            # Agregar las coordenadas de texturas a los vertices
-            sueloMeshtex.set_texcoord2D(Vsw, tsw)
-            sueloMeshtex.set_texcoord2D(Vse, tse)
-            sueloMeshtex.set_texcoord2D(Vne, tne)
-            sueloMeshtex.set_texcoord2D(Vnw, tnw)
-            # Se agregan las caras
-            sueloMeshtex.add_face(Vsw, Vse, Vne)
-            sueloMeshtex.add_face(Vne, Vnw, Vsw)
-
-            # Identificar vértices
-            vsw = vertextecho[isw]
-            vse = vertextecho[ise]
-            vne = vertextecho[ine]
-            vnw = vertextecho[inw]
-            # Agregar vertices a la nueva malla
-            Vsw = techoMeshtex.add_vertex(techoMesh.point(vsw).tolist())
-            Vse = techoMeshtex.add_vertex(techoMesh.point(vse).tolist())
-            Vne = techoMeshtex.add_vertex(techoMesh.point(vne).tolist())
-            Vnw = techoMeshtex.add_vertex(techoMesh.point(vnw).tolist())
-            # Coordenadas de texturas
-            indice = matriz[im][jm][3]
-            tx = 1/12 * (indice)
-            tX = 1/12 * (indice+1)
-            tsw = [tx, 1]
-            tse = [tX, 1]
-            tne = [tX, 0]
-            tnw = [tx, 0]
-            # Agregar las coordenadas de texturas a los vertices
-            techoMeshtex.set_texcoord2D(Vsw, tsw)
-            techoMeshtex.set_texcoord2D(Vse, tse)
-            techoMeshtex.set_texcoord2D(Vne, tne)
-            techoMeshtex.set_texcoord2D(Vnw, tnw)
-            # Se agregan las caras
-            techoMeshtex.add_face(Vsw, Vse, Vne)
-            techoMeshtex.add_face(Vne, Vnw, Vsw)
-
-    del sueloMesh
-    del techoMesh
-    # Se entregan las mallas
-    return (sueloMeshtex, techoMeshtex, lenXS, lenYS)
-
-def get_vertexs_and_indexes(mesh, orientation):
-    # Obtenemos las caras de la malla
-    faces = mesh.faces()
-
-    # orientation indica si las normales deben apuntar abajo(-1) o arriba(1)
-    assert orientation==1 or orientation==-1, "La orientación debe ser indicada con 1 o -1"
-
-    # Creamos una lista para los vertices e indices
-    vertexs = []
-    indexes = []
-
-    # Obtenemos los vertices y los recorremos
-    for vertex in mesh.vertices():
-        point = mesh.point(vertex).tolist()
-        vertexs += point
-        # Agregamos las coordenadas de a textura y su índice
-        vertexs += mesh.texcoord2D(vertex).tolist()
-        # Agregamos la norma
-        normal = calculateNormal(mesh)
-        normal = orientation * normal
-
-        vertexs += [normal[0], normal[1], normal[2]]
-
-    for face in faces:
-        # Obtenemos los vertices de la cara
-        face_indexes = mesh.fv(face)
-        for vertex in face_indexes:
-            # Obtenemos el numero de indice y lo agregamos a la lista
-            indexes += [vertex.idx()]
-
-    return vertexs, indexes
-
-def createCave(pipeline, Matriz):
-    # Creamos las mallas
-    meshs = caveMesh(Matriz)
-    # obtenemos los vértices e índices del suelo y del techo
-    sVertices, sIndices = get_vertexs_and_indexes(meshs[0],1)
-    tVertices, tIndices = get_vertexs_and_indexes(meshs[1],-1)
-    sueloShape = bs.Shape(sVertices, sIndices)
-    techoShape = bs.Shape(tVertices, tIndices)
-
-    suelo = mallaTam(meshs[0], meshs[2], meshs[3])
-    techo = meshs[1]
-
-    gpuSuelo = createTextureGPUShape(sueloShape, pipeline, texturasPath)
-    gpuTecho = createTextureGPUShape(techoShape, pipeline, texturasPath)
-
-    return gpuSuelo, gpuTecho, suelo, techo
-
-"""
 
 ########## Curva Nonuniform splines ##############################
 class CatmullRom:
@@ -572,156 +296,38 @@ def createToroidsNode(pipeline, curve, N):
 
     return scaledToroid
 
-
-
-def createSlide(curva, N):
-    "Recibe la curva con las posiciones correspondientes y un número de discretización de puntos para la malla"
-    isinstance(curva, CatmullRom)
-    Tobogan = om.TriMesh()
-    ToboganTex = om.TriMesh()
-    ToboganTex.request_vertex_texcoords2D()
-    curva.createCurve(N)
-    radio = curva.radio # radio del tobogán
-    puntosCilindro = 40 # número de puntos en un cilindro
-    dtheta = 2 * np.pi/(puntosCilindro-1)
-    
-    cilindro = []
-    for j in range(puntosCilindro-1):
+def createNormalTexSphere(Nphi, Ntheta):
+    """ int -> bs.shape
+    Crea una esfera de N puntos discretizados, con radio 1. Donde tiene incluida sus normales y texturas."""
+    vertices = []
+    indices = []
+    dphi = 2 * np.pi/Nphi
+    dtheta = np.pi/Ntheta
+    contador = 0
+    for i in range(Nphi):
+        phi = i * dphi
+        phi1 = (i+1) * dphi
+        for j in range(Ntheta):
             theta = j * dtheta
-            sin = np.sin(theta)
-            cos = np.cos(theta)
-            cilindro.append(np.array([0, radio * cos, radio * sin, 1]))
+            theta1 = (j+1) * dtheta
 
-    for i in range(N-1):
-        pos0 = curva.getvertice(i)
-        pos1 = curva.getvertice(i+1)
-        theta, alpha = orientacion(pos0, pos1)
-        matriZY = tr.rotationY(-alpha)
-        #matriZY = np.identity(4)
-        matriZZ = tr.rotationZ(theta)
-        matriz = np.matmul(matriZZ, matriZY)
-        for j in range(puntosCilindro-1):
-            P = np.ones(4)
-            P[0:3] = np.matmul(matriz, cilindro[j])[0:3] + pos0
-            vertice = np.array([P[0], P[1], P[2]])
-            Tobogan.add_vertex(vertice)
-    
-     # Se calcula el índice de cada punto (i, j) de la forma:
-    index = lambda i, j: i*(puntosCilindro-1) + j
-    # Obtenemos los vertices de cada malla, y agregamos las caras
-    vertex = list(Tobogan.vertices())
+            v0 = [np.sin(theta)*np.cos(phi), np.sin(theta)*np.sin(phi), np.cos(theta)]
+            v1 = [np.sin(theta1)*np.cos(phi), np.sin(theta1)*np.sin(phi), np.cos(theta1)]
+            v2 = [np.sin(theta1)*np.cos(phi1), np.sin(theta1)*np.sin(phi1), np.cos(theta1)]
+            v3 = [np.sin(theta)*np.cos(phi1), np.sin(theta)*np.sin(phi1), np.cos(theta)]
 
-    # Creamos las caras para esta malla (Y usar esta orientación para los factoriales)
-    for i in range(N-2):
-        for j in range(puntosCilindro-1):
-            # los índices:
-            isw = index(i,j)
-            ise = index(i+1,j)
-            if j+1==puntosCilindro-1:
-                ine = index(i+1, 0)
-                inw = index(i, 0)
-            else:
-                ine = index(i+1,j+1)
-                inw = index(i,j+1)
-            # Identificar vértices
-            Vsw = vertex[isw]
-            Vse = vertex[ise]
-            Vne = vertex[ine]
-            Vnw = vertex[inw]
-            # Se agregan las caras
-            Tobogan.add_face(Vsw, Vse, Vne)
-            Tobogan.add_face(Vne, Vnw, Vsw)
+            t0 = [phi/(2 * np.pi), theta/(np.pi)]
+            t1 = [phi/(2 * np.pi), theta1/(np.pi)]
+            t2 = [phi1/(2 * np.pi), theta1/(np.pi)]
+            t3 = [phi1/(2 * np.pi), theta/(np.pi)]
 
-    # Agregamos vértices y caras a la malla poligonal de la parte inferior, que contendrá la textura del agua en movimiento
-    for i in range(N-2):
-        for j in range(puntosCilindro//2+1, puntosCilindro-2):
-            # los índices:
-            isw = index(i,j)
-            ise = index(i+1,j) 
-            ine = index(i+1,j+1)
-            inw = index(i,j+1)
-            # Identificar vértices
-            Vsw = vertex[isw]
-            Vse = vertex[ise]
-            Vne = vertex[ine]
-            Vnw = vertex[inw]
-            # Se agregan a la nueva malla repitiendo vértices para las distintas coordenadas de texturas
-            vsw = ToboganTex.add_vertex(Tobogan.point(Vsw))
-            vse = ToboganTex.add_vertex(Tobogan.point(Vse))
-            vne = ToboganTex.add_vertex(Tobogan.point(Vne))
-            vnw = ToboganTex.add_vertex(Tobogan.point(Vnw))
-            # Se agregan las coordenadas de texturas
-            ToboganTex.set_texcoord2D(vsw, [0, 1])
-            ToboganTex.set_texcoord2D(vse, [1, 1])
-            ToboganTex.set_texcoord2D(vne, [1, 0])
-            ToboganTex.set_texcoord2D(vnw, [0, 0])
-            # Se agregan las caras
-            ToboganTex.add_face(vsw, vse, vne)
-            ToboganTex.add_face(vne, vnw, vsw)
-    return Tobogan, ToboganTex
+            vertices += [v0[0], v0[1], v0[2], t0[0], t0[1], v0[0], v0[1], v0[2]]
+            vertices += [v1[0], v1[1], v1[2], t1[0], t1[1], v1[0], v1[1], v1[2]]
+            vertices += [v2[0], v2[1], v2[2], t2[0], t2[1], v2[0], v2[1], v2[2]]
+            vertices += [v3[0], v3[1], v3[2], t3[0], t3[1], v3[0], v3[1], v3[2]]
+            indices += [ contador + 0, contador + 1, contador +2 ]
+            indices += [ contador + 2, contador + 3, contador + 0 ]
+            contador += 4
 
-def get_vertexs_and_indexesTobogan(mesh, boolTex = False):
-    # Obtenemos las caras de la malla
-    faces = mesh.faces()
+    return bs.Shape(vertices, indices)
 
-    calculateNormal(mesh) # Se calculan las normales de las caras
-
-    # Creamos una lista para los vertices e indices
-    vertexs = []
-    indexes = []
-
-    # Obtenemos los vertices y los recorremos
-    for vertex in mesh.vertices():
-        point = mesh.point(vertex).tolist()
-        vertexs += point
-        if boolTex:
-            texcoord = mesh.texcoord2D(vertex).tolist()
-            vertexs +=  texcoord
-        else:
-            vertexs += [0, 1, 0]
-        
-        normal = np.array([0, 0, 0])            # vector que promediará las normales de las caras adyacentes
-        outHalfEdge = mesh.halfedge_handle(vertex)  #Se obtiene el half edge de salida
-        OutHalfEdge = outHalfEdge
-        k = True # Se crea una variable que sirve para indicar si seguimos dentro de las caras vecinas
-        while k:
-            face = mesh.face_handle(outHalfEdge)        # Obtiene la cara ligada al half edge
-            nextHalfEdge = mesh.next_halfedge_handle(outHalfEdge)   # Obtiene el siguiente half edge 
-            if mesh.face_handle(nextHalfEdge) != face:    # Revisa que el siguiente half edge está ligado a la misma cara
-                k = False   # No lo está
-            else:
-                inHalfEdge = mesh.next_halfedge_handle(nextHalfEdge)    # Obtiene el siguiente half edge que apuntará al vértice nuevamente
-                outHalfEdge = mesh.opposite_halfedge_handle(inHalfEdge) # Se pasa al half edge opuesto que va en salida
-                if outHalfEdge == OutHalfEdge: k = False    # Volvemos al half edge del inicio
-                Normal = np.array(mesh.normal(face)) # Se obtiene la normal calculada en la cara
-                normal = normal + Normal    # Se suman las normales
-        normal = normal/np.linalg.norm(normal)    # Se obtiene el promedio de las normales
-        
-        vertexs += [normal[0], normal[1], normal[2]]
-
-    for face in faces:
-        # Obtenemos los vertices de la cara
-        face_indexes = mesh.fv(face)
-        for vertex in face_indexes:
-            # Obtenemos el numero de indice y lo agregamos a la lista
-            indexes += [vertex.idx()]
-
-    return vertexs, indexes
-
-def createTobogan(pipeline, mesh):
-    # obtenemos los vértices e índices del tobogán
-    Vertices, Indices = get_vertexs_and_indexesTobogan(mesh)
-    Shape = bs.Shape(Vertices, Indices)
-
-    gpuShape = createGPUShape(pipeline, Shape)
-
-    return gpuShape
-
-def createTexTobogan(pipeline, mesh):
-    # Se obitenen los vertices e índices del tobogán con texturas
-    Vertices, Indices = get_vertexs_and_indexesTobogan(mesh, True)
-    Shape = bs.Shape(Vertices, Indices)
-
-    gpuShape = createMultipleTextureGPUShape(Shape, pipeline, [waterPath, displacementPath], minFilterMode=GL_LINEAR, maxFilterMode=GL_LINEAR)
-
-    return gpuShape

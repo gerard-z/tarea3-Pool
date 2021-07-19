@@ -13,6 +13,8 @@ import grafica.newLightShaders as nl
 from shapes3d import *
 from resources import *
 
+" Se consideran que los ejes están en metros, por lo tanto las bolas que miden 51mm, tendrán un grosor de 0.051"
+
 
 velocidad = 1
 N = 10
@@ -25,7 +27,7 @@ if __name__ == "__main__":
 
     width = 800
     height = 800
-    title = "Tobogán"
+    title = "POOL"
 
     window = glfw.create_window(width, height, title, None, None)
 
@@ -47,7 +49,7 @@ if __name__ == "__main__":
 
     # Diferentes shader 3D que consideran la iluminación de la linterna
     phongPipeline = nl.SimplePhongSpotlightShaderProgram()
-    phongTexPipeline = nl.DoublePhongTextureSpotlightShaderProgram()
+    phongTexPipeline = nl.SimplePhongTextureSpotlightShaderProgram()
     phongOBJPipeline = nl.NormalPhongTextureSpotlightShaderProgram()
 
     # Este shader 3D no considera la iluminación de la linterna
@@ -63,56 +65,16 @@ if __name__ == "__main__":
     # and which one is at the back
     glEnable(GL_DEPTH_TEST)
 
-    # Creando curva
+    # CREANDO GPU
+    bolaShape = createNormalTexSphere(40, 20)
+    gpuBola1 = createTextureGPUShape(bolaShape, phongTexPipeline, texBola1)
 
-    pos1 = np.zeros((25,3))
-    pos1[0] = np.array([-20, 10, 0])
-    pos1[1] = np.array([-10, 5, 0])
-    pos1[2] = np.array([0,0,0])
-    pos1[3] = np.array([10,-5,0])
-    pos1[4] = np.array([20,0,-2.5])
-    pos1[5] = np.array([25,10,-5])
-    pos1[6] = np.array([20, 20, -7.5])
-    pos1[7] = np.array([10, 25, -10])
-    pos1[8] = np.array([0, 20, -12.5])
-    pos1[9] = np.array([-5, 10, -12.5])
-    pos1[10] = np.array([-5, 0, -15])
-    pos1[11] = np.array([-10, -10, -17.5])
-    pos1[12] = np.array([-20, -15, -17.5])
-    pos1[13] = np.array([-30, -10, -20])
-    pos1[14] = np.array([-35, 0, -22.5])
-    pos1[15] = np.array([-30, 10, -25])
-    pos1[16] = np.array([-20, 15, -27.5])
-    pos1[17] = np.array([-10, 15, -30])
-    pos1[18] = np.array([0, 10, -30])
-    pos1[19] = np.array([5, 0, -30])
-    pos1[20] = np.array([5, -10, -30])
-    pos1[21] = np.array([5, -20, -30])
-    pos1[22] = np.array([0, -30, -30])
-    pos1[23] = np.array([-15, -35, -30])
-    pos1[24] = np.array([-25, -35, -30])
+    toroidShape = createRandomColorNormalToroid(20)
+    gpuToroid = createGPUShape(phongPipeline, toroidShape)
 
 
-
-
-    # Creating shapes on GPU memory
-    curva = CatmullRom(pos1, velocidad)
-    tobogan, toboganTex = createSlide(curva, 100)
-    gpuTobogan = createTobogan(phongPipeline, tobogan)
-    gpuToboganTex = createTexTobogan(phongTexPipeline, toboganTex)
-
-    radio = curva.radio-0.2
-    #shapeBote = readOBJ(botePath, 1)
-    #gpuBote = createMultipleTextureGPUShape(shapeBote, phongOBJPipeline, [texBotePath, NormBotePath])
-
-    toroids = createToroidsNode(phongPipeline, curva, N)
-
-    shapeBote1 = readOBJ(boat1, 1)
-    gpuBote1 = createMultipleTextureGPUShape(shapeBote1, phongOBJPipeline, [wood1, norm1], sWrapMode=GL_REPEAT, tWrapMode=GL_REPEAT)
-    shapeBote2 = readOBJ(boat2, 1)
-    gpuBote2 = createMultipleTextureGPUShape(shapeBote2, phongOBJPipeline, [wood2, norm2], sWrapMode=GL_REPEAT, tWrapMode=GL_REPEAT)
-    shapeBote3 = readOBJ(boat3, 1)
-    gpuBote3 = createMultipleTextureGPUShape(shapeBote3, phongOBJPipeline, [wood3, norm3], sWrapMode=GL_REPEAT, tWrapMode=GL_REPEAT)
+    bola1 = Bola(phongTexPipeline, np.array([0, 0, 0]))
+    bola1.setModel(gpuBola1)
 
     perfMonitor = pm.PerformanceMonitor(glfw.get_time(), 0.5)
     # glfw will swap buffers as soon as possible
@@ -122,15 +84,6 @@ if __name__ == "__main__":
     t0 = glfw.get_time()
     light = Iluminacion()
     T = t0
-    Lpos = curva.puntos//4
-    Lpos1 = curva.getvertice(Lpos)
-    Lpos2 = curva.getvertice(Lpos*2)
-    Lpos3 = curva.getvertice(Lpos*3)
-    Lpos1[2] += curva.radio*0.9
-    Lpos2[2] += curva.radio*0.9
-    Lpos3[2] += curva.radio*0.9
-    Lpos4 = curva.getvertice(curva.puntos-16)
-    phi = 0
 
     # Application loop
     while not glfw.window_should_close(window):
@@ -142,11 +95,6 @@ if __name__ == "__main__":
         t1 = glfw.get_time()
         delta = t1 -t0
         t0 = t1
-
-
-        c1 = np.abs(((0.5*t1+0.00) % 2)-1)
-        c2 = np.abs(((0.5*t1+0.66) % 2)-1)
-        c3 = np.abs(((0.5*t1+1.32) % 2)-1)
 
         # Using GLFW to check for input events
         glfw.poll_events()
@@ -161,27 +109,19 @@ if __name__ == "__main__":
         if (glfw.get_key(window, glfw.KEY_RIGHT) == glfw.PRESS) and phi>=-np.pi*0.2:
             phi -= delta
         # Definimos la cámara de la aplicación
-        controller.update_camera(delta, curva)
+        controller.update_camera(delta)
         camera = controller.get_camera()
-        # Actualizamos eye y at de la cámara en el tobogán
-        if controller.camara == 2:
-            slideEye, slideAt = curva.camera(delta, controller)
-            camera.eye = slideEye
-            camera.at = slideAt
 
         viewMatrix = camera.update_view()
 
         T += 3*delta * velocidad
 
-        # Posición del bote
-        pos, theta, alpha, dir = curva.boat(delta, controller)
-        theta += np.pi/2        
-        adaptarPos(dir, radio, phi, theta)
+        pos = controller.getEyeCamera()
+        dir = controller.getAtCamera()
+
         # iluminación
         lightPos = np.array(pos)
-        adaptarPos(lightPos, radio*0.7, phi, theta)
-        adaptarPos(pos, radio, phi, theta)
-        lightDirection = dir- pos
+        lightDirection = dir - pos
 
 
         # definiendo parámetros del foco
@@ -211,14 +151,6 @@ if __name__ == "__main__":
         
         # Shader de texturas para dar efecto de movimiento de agua
         light.updateLight(phongTexPipeline, lightPos, lightDirection, controller.getEyeCamera())
-        light.addLight(0, Lpos1, 1, 1, 1)
-        light.addLight(1, Lpos2, 1, 1, 1)
-        light.addLight(2, Lpos3, 1, 1, 1)
-        light.addLight(3, Lpos4, c1, c2, c3)
-        # Enviando información de las texturas
-        glUniform1i(glGetUniformLocation(phongTexPipeline.shaderProgram, "TexWater"), 0)
-        glUniform1i(glGetUniformLocation(phongTexPipeline.shaderProgram, "TexDisplacement"), 1)
-        glUniform1f(glGetUniformLocation(phongTexPipeline.shaderProgram, "time"), T)
         # Enviar matrices de transformaciones
         glUniformMatrix4fv(glGetUniformLocation(phongTexPipeline.shaderProgram, "projection"), 1, GL_TRUE, projection)
         glUniformMatrix4fv(glGetUniformLocation(phongTexPipeline.shaderProgram, "view"), 1, GL_TRUE, viewMatrix)
@@ -228,18 +160,13 @@ if __name__ == "__main__":
         glUniform3f(glGetUniformLocation(phongTexPipeline.shaderProgram, "Kd"), 0.5, 0.5, 0.5)
         glUniform3f(glGetUniformLocation(phongTexPipeline.shaderProgram, "Ks"), 1.0, 1.0, 1.0)
 
-        # Transformación del modelo
-        glUniformMatrix4fv(glGetUniformLocation(phongTexPipeline.shaderProgram, "model"), 1, GL_TRUE, tr.identity())
         # Drawing
-        phongTexPipeline.drawCall(gpuToboganTex)
-
+        #bola1.draw()
+        glUniformMatrix4fv(glGetUniformLocation(phongTexPipeline.shaderProgram, "model"), 1, GL_TRUE, tr.identity())
+        phongTexPipeline.drawCall(gpuBola1)
 
         # Shader de iluminación para objetos sin texturas
         light.updateLight(phongPipeline, lightPos, lightDirection, lightPos)
-        light.addLight(0, Lpos1, 1, 1, 1)
-        light.addLight(1, Lpos2, 1, 1, 1)
-        light.addLight(2, Lpos3, 1, 1, 1)
-        light.addLight(3, Lpos4, c1, c2, c3)
         # Enviar matrices de transformaciones
         glUniformMatrix4fv(glGetUniformLocation(phongPipeline.shaderProgram, "projection"), 1, GL_TRUE, projection)
         glUniformMatrix4fv(glGetUniformLocation(phongPipeline.shaderProgram, "view"), 1, GL_TRUE, viewMatrix)
@@ -249,21 +176,14 @@ if __name__ == "__main__":
         glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Kd"), 0.5, 0.5, 0.5)
         glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ks"), 1.0, 1.0, 1.0)
 
-        # Transformación del modelo
-        glUniformMatrix4fv(glGetUniformLocation(phongPipeline.shaderProgram, "model"), 1, GL_TRUE, tr.identity())
-
-        # Drawing
-        phongPipeline.drawCall(gpuTobogan)
-        sg.drawSceneGraphNode(toroids, phongPipeline, "model")
+        #Draw
+        glUniformMatrix4fv(glGetUniformLocation(phongPipeline.shaderProgram, "model"), 1, GL_TRUE, tr.matmul([tr.translate(10, 10 ,10), tr.uniformScale(10)]))
+        phongPipeline.drawCall(gpuToroid)
 
 
 
         # Shader de iluminación para objetos con texturas para color y normal
         light.updateLight(phongOBJPipeline, lightPos, lightDirection, lightPos)
-        light.addLight(0, Lpos1, 1, 1, 1)
-        light.addLight(1, Lpos2, 1, 1, 1)
-        light.addLight(2, Lpos3, 1, 1, 1)
-        light.addLight(3, Lpos4, c1, c2, c3)
         # Enviar matrices de transformaciones
         glUniformMatrix4fv(glGetUniformLocation(phongOBJPipeline.shaderProgram, "projection"), 1, GL_TRUE, projection)
         glUniformMatrix4fv(glGetUniformLocation(phongOBJPipeline.shaderProgram, "view"), 1, GL_TRUE, viewMatrix)
@@ -272,26 +192,12 @@ if __name__ == "__main__":
         glUniform3f(glGetUniformLocation(phongOBJPipeline.shaderProgram, "Ka"), 0.2, 0.2, 0.2)
         glUniform3f(glGetUniformLocation(phongOBJPipeline.shaderProgram, "Kd"), 0.5, 0.5, 0.5)
         glUniform3f(glGetUniformLocation(phongOBJPipeline.shaderProgram, "Ks"), 1.0, 1.0, 1.0)
-
-        # Transformación del modelo
-        rotation = tr.matmul([tr.rotationZ(theta), tr.rotationY(-phi), tr.rotationX(np.pi/2-alpha)])
-        model = tr.matmul([tr.translate(pos[0], pos[1], pos[2]), rotation, tr.uniformScale(0.2)])
-        glUniformMatrix4fv(glGetUniformLocation(phongOBJPipeline.shaderProgram, "model"), 1, GL_TRUE, model)
-
-        # Drawing
-        phongOBJPipeline.drawCall(gpuBote1)
-        phongOBJPipeline.drawCall(gpuBote2)
-        phongOBJPipeline.drawCall(gpuBote3)
         
         
         # Once the drawing is rendered, buffers are swap so an uncomplete drawing is never seen.
         glfw.swap_buffers(window)
 
-    gpuTobogan.clear()
-    gpuToboganTex.clear()
-    gpuBote1.clear()
-    gpuBote2.clear()
-    gpuBote3.clear()
-    toroids.clear()
+    bola1.model.clear()
+    gpuToroid.clear()
 
     glfw.terminate()
