@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
     # CREANDO GPU
     bolaShape = createNormalTexSphere(40, 20)
-    gpuBola1 = createTextureGPUShape(bolaShape, phongTexPipeline, texBola1)
+    gpuBola1 = createTextureGPUShape(bolaShape, phongTexPipeline, texBola1, minFilterMode=GL_LINEAR)
 
     toroidShape = createRandomColorNormalToroid(20)
     gpuToroid = createGPUShape(phongPipeline, toroidShape)
@@ -161,9 +161,8 @@ if __name__ == "__main__":
         glUniform3f(glGetUniformLocation(phongTexPipeline.shaderProgram, "Ks"), 1.0, 1.0, 1.0)
 
         # Drawing
-        #bola1.draw()
-        glUniformMatrix4fv(glGetUniformLocation(phongTexPipeline.shaderProgram, "model"), 1, GL_TRUE, tr.identity())
-        phongTexPipeline.drawCall(gpuBola1)
+        bola1.draw()
+        
 
         # Shader de iluminación para objetos sin texturas
         light.updateLight(phongPipeline, lightPos, lightDirection, lightPos)
