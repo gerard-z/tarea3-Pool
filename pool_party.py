@@ -2,6 +2,7 @@
 
 import glfw
 from OpenGL.GL import *
+import copy
 import OpenGL.GL.shaders
 import numpy as np
 import grafica.transformations as tr
@@ -70,13 +71,68 @@ if __name__ == "__main__":
 
     bolaShape = createNormalTexSphere(40, 20)
     gpuBola1 = createTextureGPUShape(bolaShape, phongTexPipeline, texBola1, minFilterMode=GL_LINEAR)
+    gpuBola2 = copy.deepcopy(gpuBola1)
+    gpuBola2.texture = es.textureSimpleSetup(texBola2, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+    gpuBola3 = copy.deepcopy(gpuBola1)
+    gpuBola3.texture = es.textureSimpleSetup(texBola3, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+    gpuBola4 = copy.deepcopy(gpuBola1)
+    gpuBola4.texture = es.textureSimpleSetup(texBola4, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+    gpuBola5 = copy.deepcopy(gpuBola1)
+    gpuBola5.texture = es.textureSimpleSetup(texBola5, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+    gpuBola6 = copy.deepcopy(gpuBola1)
+    gpuBola6.texture = es.textureSimpleSetup(texBola6, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+    gpuBola7 = copy.deepcopy(gpuBola1)
+    gpuBola7.texture = es.textureSimpleSetup(texBola7, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+    gpuBola8 = copy.deepcopy(gpuBola1)
+    gpuBola8.texture = es.textureSimpleSetup(texBola8, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+    gpuBola9 = copy.deepcopy(gpuBola1)
+    gpuBola9.texture = es.textureSimpleSetup(texBola9, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+    gpuBola10 = copy.deepcopy(gpuBola1)
+    gpuBola10.texture = es.textureSimpleSetup(texBola10, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+    gpuBola11 = copy.deepcopy(gpuBola1)
+    gpuBola11.texture = es.textureSimpleSetup(texBola11, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+    gpuBola12 = copy.deepcopy(gpuBola1)
+    gpuBola12.texture = es.textureSimpleSetup(texBola12, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+    gpuBola13 = copy.deepcopy(gpuBola1)
+    gpuBola13.texture = es.textureSimpleSetup(texBola13, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+    gpuBola14 = copy.deepcopy(gpuBola1)
+    gpuBola14.texture = es.textureSimpleSetup(texBola14, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+    gpuBola15 = copy.deepcopy(gpuBola1)
+    gpuBola15.texture = es.textureSimpleSetup(texBola15, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
 
-    toroidShape = createRandomColorNormalToroid(20)
-    gpuToroid = createGPUShape(phongPipeline, toroidShape)
+    
 
 
-    bola1 = Bola(phongTexPipeline, np.array([0, 0, 0]))
+    bola1 = Bola(phongTexPipeline, np.array([0.5, 0.204, 0.9]))
     bola1.setModel(gpuBola1)
+    bola2 = Bola(phongTexPipeline, np.array([0.5, 0.102, 0.9]))
+    bola2.setModel(gpuBola2)
+    bola3 = Bola(phongTexPipeline, np.array([0.5, 0, 0.9]))
+    bola3.setModel(gpuBola3)
+    bola4 = Bola(phongTexPipeline, np.array([0.5, -0.102, 0.9]))
+    bola4.setModel(gpuBola4)
+    bola5 = Bola(phongTexPipeline, np.array([0.5, -0.204, 0.9]))
+    bola5.setModel(gpuBola5)
+    bola6 = Bola(phongTexPipeline, np.array([ 0.398, 0.153, 0.9]))
+    bola6.setModel(gpuBola6)
+    bola7 = Bola(phongTexPipeline, np.array([0.398, 0.051, 0.9]))
+    bola7.setModel(gpuBola7)
+    bola8 = Bola(phongTexPipeline, np.array([0.398, -0.051, 0.9]))
+    bola8.setModel(gpuBola8)
+    bola9 = Bola(phongTexPipeline, np.array([0.398, -0.153, 0.9]))
+    bola9.setModel(gpuBola9)
+    bola10 = Bola(phongTexPipeline, np.array([0.296, 0.101, 0.9]))
+    bola10.setModel(gpuBola10)
+    bola11 = Bola(phongTexPipeline, np.array([0.296, 0, 0.9]))
+    bola11.setModel(gpuBola11)
+    bola12 = Bola(phongTexPipeline, np.array([0.296, -0.101, 0.9]))
+    bola12.setModel(gpuBola12)
+    bola13 = Bola(phongTexPipeline, np.array([0.194, 0.051, 0.9]))
+    bola13.setModel(gpuBola13)
+    bola14 = Bola(phongTexPipeline, np.array([0.194, -0.051, 0.9]))
+    bola14.setModel(gpuBola14)
+    bola15 = Bola(phongTexPipeline, np.array([0.092, 0, 0.9]))
+    bola15.setModel(gpuBola15)
 
 
 
@@ -166,6 +222,20 @@ if __name__ == "__main__":
 
         # Drawing
         bola1.draw()
+        bola2.draw()
+        bola3.draw()
+        bola4.draw()
+        bola5.draw()
+        bola6.draw()
+        bola7.draw()
+        bola8.draw()
+        bola9.draw()
+        bola10.draw()
+        bola11.draw()
+        bola12.draw()
+        bola13.draw()
+        bola14.draw()
+        bola15.draw()
         
 
         # Shader de iluminación para objetos sin texturas
@@ -180,8 +250,7 @@ if __name__ == "__main__":
         glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ks"), 1.0, 1.0, 1.0)
 
         #Draw
-        glUniformMatrix4fv(glGetUniformLocation(phongPipeline.shaderProgram, "model"), 1, GL_TRUE, tr.matmul([tr.translate(10, 10 ,10), tr.uniformScale(10)]))
-        phongPipeline.drawCall(gpuToroid)
+        glUniformMatrix4fv(glGetUniformLocation(phongPipeline.shaderProgram, "model"), 1, GL_TRUE, tr.matmul([tr.translate(0, 0 ,0), tr.uniformScale(1)]))
         mesa.draw()
 
 
@@ -202,7 +271,6 @@ if __name__ == "__main__":
         glfw.swap_buffers(window)
 
     bola1.model.clear()
-    gpuToroid.clear()
     mesa.model.clear()
 
     glfw.terminate()

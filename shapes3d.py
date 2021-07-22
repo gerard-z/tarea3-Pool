@@ -30,6 +30,20 @@ wood3 = os.path.join(assetsDirectory, "wood3.jpg")
 norm3 = os.path.join(assetsDirectory, "wood3_NRM.jpg")
 
 texBola1 = os.path.join(assetsDirectory, "bola1.png")
+texBola2 = os.path.join(assetsDirectory, "bola2.png")
+texBola3 = os.path.join(assetsDirectory, "bola3.png")
+texBola4 = os.path.join(assetsDirectory, "bola4.png")
+texBola5 = os.path.join(assetsDirectory, "bola5.png")
+texBola6 = os.path.join(assetsDirectory, "bola6.png")
+texBola7 = os.path.join(assetsDirectory, "bola7.png")
+texBola8 = os.path.join(assetsDirectory, "bola8.png")
+texBola9 = os.path.join(assetsDirectory, "bola9.png")
+texBola10 = os.path.join(assetsDirectory, "bola10.png")
+texBola11 = os.path.join(assetsDirectory, "bola11.png")
+texBola12 = os.path.join(assetsDirectory, "bola12.png")
+texBola13 = os.path.join(assetsDirectory, "bola13.png")
+texBola14 = os.path.join(assetsDirectory, "bola14.png")
+texBola15 = os.path.join(assetsDirectory, "bola15.png")
 
 # Convenience function to ease initialization
 def createGPUShape(pipeline, shape):
@@ -343,20 +357,89 @@ def createNormalTexTable(pipeline, largo, ancho, grosor, diam):
     
 
     # Tela Verde
-    def TelaVerde(pipeline, dx, dy, altura):
+    def TelaVerde(pipeline, dx, dy, altura, radio):
         vertices = []
         indices = []
         vertices += [dx, dy, altura, 0.3, 1 , 0.3, 0, 0, 1]
         vertices += [dx, -dy, altura, 0.3, 1 , 0.3, 0, 0, 1]
         vertices += [-dx, -dy, altura, 0.3, 1 , 0.3, 0, 0, 1]
         vertices += [-dx, dy, altura, 0.3, 1 , 0.3, 0, 0, 1]
+        #### corrección de bolsillos en los bordes del centro
+        vertices += [radio, dy, altura, 0.3, 1, 0.3, 0, 0, 1]
+        vertices += [0, dy-radio, altura, 0.3, 1, 0.3, 0, 0, 1]
+        vertices += [-radio, dy, altura, 0.3, 1, 0.3, 0, 0, 1]
+        vertices += [radio, -dy, altura, 0.3, 1, 0.3, 0, 0, 1]
+        vertices += [0, -dy+radio, altura, 0.3, 1, 0.3, 0, 0, 1]
+        vertices += [-radio, -dy, altura, 0.3, 1, 0.3, 0, 0, 1]
 
-        indices += [0, 1, 2, 2, 3, 0]
+        indices += [0, 1, 7, 7, 8, 0, 0, 8, 2, 2, 8, 9,
+                    2, 3, 6, 6, 2, 5, 2, 5, 0, 0, 5, 4]
 
         return createGPUShape(pipeline, bs.Shape(vertices, indices))
 
     tela = sg.SceneGraphNode("Tela")
-    tela.childs = [TelaVerde(pipeline, dx-3/2*diam, dy-3/2*diam, altura)]
+    tela.childs = [TelaVerde(pipeline, dx-11/8*diam, dy-11/8*diam, altura, diam/2)]
+
+    # Patas de apoyo de la mesa
+    def apoyo(pipeline, radio, altura):
+        vertices = []
+        indices = []
+
+        color = [0.2, 0.1, 0.1]
+        radio /=2
+
+        vertices += [radio, radio, 0, color[0], color[1], color[2], 1, 0, 0]
+        vertices += [radio, -radio, 0, color[0], color[1], color[2], 1, 0, 0]
+        vertices += [radio, radio, altura, color[0], color[1], color[2], 1, 0, 0]
+        vertices += [radio, -radio, altura, color[0], color[1], color[2], 1, 0, 0]
+
+        indices += [0, 1 , 2, 1, 2, 3]
+
+        vertices += [radio, radio, 0, color[0], color[1], color[2], 0, 1, 0]
+        vertices += [-radio, radio, 0, color[0], color[1], color[2], 0, 1, 0]
+        vertices += [radio, radio, altura, color[0], color[1], color[2], 0, 1, 0]
+        vertices += [-radio, radio, altura, color[0], color[1], color[2], 0, 1, 0]
+
+        indices += [4, 5 , 6, 5, 6, 7]
+
+        vertices += [radio, -radio, 0, color[0], color[1], color[2], 0, -1, 0]
+        vertices += [-radio, -radio, 0, color[0], color[1], color[2], 0, -1, 0]
+        vertices += [radio, -radio, altura, color[0], color[1], color[2], 0, -1, 0]
+        vertices += [-radio, -radio, altura, color[0], color[1], color[2], 0, -1, 0]
+
+        indices += [8, 9 , 10, 9, 10, 11]
+
+        vertices += [-radio, radio, 0, color[0], color[1], color[2], -1, 0, 0]
+        vertices += [-radio, -radio, 0, color[0], color[1], color[2], -1, 0, 0]
+        vertices += [-radio, radio, altura, color[0], color[1], color[2], -1, 0, 0]
+        vertices += [-radio, -radio, altura, color[0], color[1], color[2], -1, 0, 0]
+
+        indices += [12, 13 , 14, 13, 14, 15]
+
+        return createGPUShape(pipeline, bs.Shape(vertices, indices))
+
+    pata = sg.SceneGraphNode("pata")
+    pata.transform = tr.identity()
+    pata.childs = [apoyo(pipeline, diam/2, altura)]
+
+    pata1 = sg.SceneGraphNode("pata1")
+    pata1.transform = tr.translate(dx-diam/4, dy-diam/4, 0)
+    pata1.childs = [pata]
+
+    pata2 = sg.SceneGraphNode("pata2")
+    pata2.transform = tr.translate(-dx+diam/4, dy-diam/4, 0)
+    pata2.childs = [pata]
+
+    pata3 = sg.SceneGraphNode("pata3")
+    pata3.transform = tr.translate(-dx+diam/4, -dy+diam/4, 0)
+    pata3.childs = [pata]
+
+    pata4 = sg.SceneGraphNode("pata4")
+    pata4.transform = tr.translate(dx-diam/4, -dy+diam/4, 0)
+    pata4.childs = [pata]
+
+    patas = sg.SceneGraphNode("patas")
+    patas.childs = [pata1, pata2, pata3, pata4]
 
     # Bordes
     def Bordes(pipeline, dx, dy, radio, altura):
@@ -364,6 +447,8 @@ def createNormalTexTable(pipeline, largo, ancho, grosor, diam):
         indices = []
 
         color = [0.2, 0.1, 0.1]
+
+        altura -= radio*2
 
         vertices += [dx, dy, altura, color[0], color[1], color[2], 0, 0, 1]
         vertices += [dx, -dy, altura, color[0], color[1], color[2], 0, 0, 1]
@@ -379,7 +464,7 @@ def createNormalTexTable(pipeline, largo, ancho, grosor, diam):
                     2, 6, 7, 2, 3, 7,
                     3, 7, 4, 3, 0, 4]
 
-        altura1 = altura + radio*2
+        altura1 = altura + radio*4
         vertices += [dx, dy, altura1, color[0], color[1], color[2], 0, 0, 1]
         vertices += [dx, -dy, altura1, color[0], color[1], color[2], 0, 0, 1]
         vertices += [-dx, -dy, altura1, color[0], color[1], color[2], 0, 0, 1]
@@ -457,6 +542,193 @@ def createNormalTexTable(pipeline, largo, ancho, grosor, diam):
     bordes = sg.SceneGraphNode("Bordes")
     bordes.childs = [Bordes(pipeline, dx, dy, diam/2, altura)]
 
+    # Amortiguadores
+    def Amortiguadores(pipeline, diam, grosor, altura):
+        vertices = []
+        indices = []
+        radio = diam/2
+        recorte = diam + radio
+        recorte1 = 2*diam + radio
+        altura1 = altura + diam
+
+        color = [48/255, 132/255, 70/255]
+        index = np.array([0, 1, 2, 1, 2, 3])
+        cuatros = np.array([4, 4, 4, 4, 4, 4])
+
+        vertices += [dx-radio, dy-recorte, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [dx-radio, -dy+recorte, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [dx-recorte, dy-recorte1, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [dx-recorte, -dy+recorte1, altura1, color[0], color[1], color[2], 0, 0, 1]
+
+        indices += index.tolist()
+
+        vertices += [-dx+radio, dy-recorte, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [-dx+radio, -dy+recorte, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [-dx+recorte, dy-recorte1, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [-dx+recorte, -dy+recorte1, altura1, color[0], color[1], color[2], 0, 0, 1]
+
+        indices += (index+cuatros).tolist()
+
+        vertices += [dx-recorte, dy-radio, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [radio, dy-radio, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [dx-recorte1, dy-recorte, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [diam, dy-recorte, altura1, color[0], color[1], color[2], 0, 0, 1]
+
+        indices += (index+cuatros*2).tolist()
+
+        vertices += [-radio, dy-radio, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [-dx+recorte, dy-radio, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [-diam, dy-recorte, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [-dx+recorte1, dy-recorte, altura1, color[0], color[1], color[2], 0, 0, 1]
+
+        indices += (index+cuatros*3).tolist()
+
+        vertices += [dx-recorte, -dy+radio, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [radio, -dy+radio, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [dx-recorte1, -dy+recorte, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [diam, -dy+recorte, altura1, color[0], color[1], color[2], 0, 0, 1]
+
+        indices += (index+cuatros*4).tolist()
+
+        vertices += [-radio, -dy+radio, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [-dx+recorte, -dy+radio, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [-diam, -dy+recorte, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [-dx+recorte1, -dy+recorte, altura1, color[0], color[1], color[2], 0, 0, 1]
+
+        indices += (index+cuatros*5).tolist()
+
+        vertices += [dx-radio, dy-recorte, altura1, color[0], color[1], color[2], -1, 1, 0]
+        vertices += [dx-recorte, dy-recorte1, altura1, color[0], color[1], color[2], -1, 1, 0]
+        vertices += [dx-radio, dy-recorte, altura, color[0], color[1], color[2], -1, 1, 0]
+        vertices += [dx-recorte, dy-recorte1, altura, color[0], color[1], color[2], -1, 1, 0]
+
+        indices += (index+cuatros*6).tolist()
+
+        vertices += [dx-recorte, dy-recorte1, altura1, color[0], color[1], color[2], -1, 0, 0]
+        vertices += [dx-recorte, -dy+recorte1, altura1, color[0], color[1], color[2], -1, 0, 0]
+        vertices += [dx-recorte, dy-recorte1, altura, color[0], color[1], color[2], -1, 0, 0]
+        vertices += [dx-recorte, -dy+recorte1, altura, color[0], color[1], color[2], -1, 0, 0]
+
+        indices += (index+cuatros*7).tolist()
+
+        vertices += [dx-radio, -dy+recorte, altura1, color[0], color[1], color[2], -1, -1, 0]
+        vertices += [dx-recorte, -dy+recorte1, altura1, color[0], color[1], color[2], -1, -1, 0]
+        vertices += [dx-radio, -dy+recorte, altura, color[0], color[1], color[2], -1, -1, 0]
+        vertices += [dx-recorte, -dy+recorte1, altura, color[0], color[1], color[2], -1, -1, 0]
+        
+        indices += (index+cuatros*8).tolist()
+
+        vertices += [-dx+radio, dy-recorte, altura1, color[0], color[1], color[2], 1, 1, 0]
+        vertices += [-dx+recorte, dy-recorte1, altura1, color[0], color[1], color[2], 1, 1, 0]
+        vertices += [-dx+radio, dy-recorte, altura, color[0], color[1], color[2], 1, 1, 0]
+        vertices += [-dx+recorte, dy-recorte1, altura, color[0], color[1], color[2], 1, 1, 0]
+
+        indices += (index+cuatros*9).tolist()
+
+        vertices += [-dx+recorte, dy-recorte1, altura1, color[0], color[1], color[2], 1, 0, 0]
+        vertices += [-dx+recorte, -dy+recorte1, altura1, color[0], color[1], color[2], 1, 0, 0]
+        vertices += [-dx+recorte, dy-recorte1, altura, color[0], color[1], color[2], 1, 0, 0]
+        vertices += [-dx+recorte, -dy+recorte1, altura, color[0], color[1], color[2], 1, 0, 0]
+
+        indices += (index+cuatros*10).tolist()
+
+        vertices += [-dx+radio, -dy+recorte, altura1, color[0], color[1], color[2], 1, -1, 0]
+        vertices += [-dx+recorte, -dy+recorte1, altura1, color[0], color[1], color[2], 1, -1, 0]
+        vertices += [-dx+radio, -dy+recorte, altura, color[0], color[1], color[2], 1, -1, 0]
+        vertices += [-dx+recorte, -dy+recorte1, altura, color[0], color[1], color[2], 1, -1, 0]
+        
+        indices += (index+cuatros*11).tolist()
+
+        vertices += [dx-recorte, dy-radio, altura1, color[0], color[1], color[2], 1, -1, 0]
+        vertices += [dx-recorte1, dy-recorte, altura1, color[0], color[1], color[2], 1, -1, 0]
+        vertices += [dx-recorte, dy-radio, altura, color[0], color[1], color[2], 1, -1, 0]
+        vertices += [dx-recorte1, dy-recorte, altura, color[0], color[1], color[2], 1, -1, 0]
+
+        indices += (index+cuatros*12).tolist()
+
+        vertices += [dx-recorte1, dy-recorte, altura1, color[0], color[1], color[2], 0, -1, 0]
+        vertices += [diam, dy-recorte, altura1, color[0], color[1], color[2], 0, -1, 0]
+        vertices += [dx-recorte1, dy-recorte, altura, color[0], color[1], color[2], 0, -1, 0]
+        vertices += [diam, dy-recorte, altura, color[0], color[1], color[2], 0, -1, 0]
+
+        indices += (index+cuatros*13).tolist()
+
+        vertices += [radio, dy-radio, altura1, color[0], color[1], color[2], -1, -1, 0]
+        vertices += [diam, dy-recorte, altura1, color[0], color[1], color[2], -1, -1, 0]
+        vertices += [radio, dy-radio, altura, color[0], color[1], color[2], -1, -1, 0]
+        vertices += [diam, dy-recorte, altura, color[0], color[1], color[2], -1, -1, 0]
+
+        indices += (index+cuatros*14).tolist()
+
+        vertices += [-radio, dy-radio, altura1, color[0], color[1], color[2], 1, -1, 0]
+        vertices += [-diam, dy-recorte, altura1, color[0], color[1], color[2], 1, -1, 0]
+        vertices += [-radio, dy-radio, altura, color[0], color[1], color[2], 1, -1, 0]
+        vertices += [-diam, dy-recorte, altura, color[0], color[1], color[2], 1, -1, 0]
+
+        indices += (index+cuatros*15).tolist()
+
+        vertices += [-dx+recorte1, dy-recorte, altura1, color[0], color[1], color[2], 0, -1, 0]
+        vertices += [-diam, dy-recorte, altura1, color[0], color[1], color[2], 0, -1, 0]
+        vertices += [-dx+recorte1, dy-recorte, altura, color[0], color[1], color[2], 0, -1, 0]
+        vertices += [-diam, dy-recorte, altura, color[0], color[1], color[2], 0, -1, 0]
+
+        indices += (index+cuatros*16).tolist()
+
+        vertices += [-dx+recorte, dy-radio, altura1, color[0], color[1], color[2], -1, -1, 0]
+        vertices += [-dx+recorte1, dy-recorte, altura1, color[0], color[1], color[2], -1, -1, 0]
+        vertices += [-dx+recorte, dy-radio, altura, color[0], color[1], color[2], -1, -1, 0]
+        vertices += [-dx+recorte1, dy-recorte, altura, color[0], color[1], color[2], -1, -1, 0]
+
+        indices += (index+cuatros*17).tolist()
+
+        vertices += [dx-recorte, -dy+radio, altura1, color[0], color[1], color[2], 1, 1, 0]
+        vertices += [dx-recorte1, -dy+recorte, altura1, color[0], color[1], color[2], 1, 1, 0]
+        vertices += [dx-recorte, -dy+radio, altura, color[0], color[1], color[2], 1, 1, 0]
+        vertices += [dx-recorte1, -dy+recorte, altura, color[0], color[1], color[2], 1, 1, 0]
+
+        indices += (index+cuatros*18).tolist()
+
+        vertices += [dx-recorte1, -dy+recorte, altura1, color[0], color[1], color[2], 0, 1, 0]
+        vertices += [diam, -dy+recorte, altura1, color[0], color[1], color[2], 0, 1, 0]
+        vertices += [dx-recorte1, -dy+recorte, altura, color[0], color[1], color[2], 0, 1, 0]
+        vertices += [diam, -dy+recorte, altura, color[0], color[1], color[2], 0, 1, 0]
+
+        indices += (index+cuatros*19).tolist()
+
+        vertices += [radio, -dy+radio, altura1, color[0], color[1], color[2], -1, 1, 0]
+        vertices += [diam, -dy+recorte, altura1, color[0], color[1], color[2], -1, 1, 0]
+        vertices += [radio, -dy+radio, altura, color[0], color[1], color[2], -1, 1, 0]
+        vertices += [diam, -dy+recorte, altura, color[0], color[1], color[2], -1, 1, 0]
+
+        indices += (index+cuatros*20).tolist()
+
+        vertices += [-radio, -dy+radio, altura1, color[0], color[1], color[2], 1, 1, 0]
+        vertices += [-diam, -dy+recorte, altura1, color[0], color[1], color[2], 1, 1, 0]
+        vertices += [-radio, -dy+radio, altura, color[0], color[1], color[2], 1, 1, 0]
+        vertices += [-diam, -dy+recorte, altura, color[0], color[1], color[2], 1, 1, 0]
+
+        indices += (index+cuatros*21).tolist()
+
+        vertices += [-dx+recorte1, -dy+recorte, altura1, color[0], color[1], color[2], 0, 1, 0]
+        vertices += [-diam, -dy+recorte, altura1, color[0], color[1], color[2], 0, 1, 0]
+        vertices += [-dx+recorte1, -dy+recorte, altura, color[0], color[1], color[2], 0, 1, 0]
+        vertices += [-diam, -dy+recorte, altura, color[0], color[1], color[2], 0, 1, 0]
+
+        indices += (index+cuatros*22).tolist()
+
+        vertices += [-dx+recorte, -dy+radio, altura1, color[0], color[1], color[2], -1, 1, 0]
+        vertices += [-dx+recorte1, -dy+recorte, altura1, color[0], color[1], color[2], -1, 1, 0]
+        vertices += [-dx+recorte, -dy+radio, altura, color[0], color[1], color[2], -1, 1, 0]
+        vertices += [-dx+recorte1, -dy+recorte, altura, color[0], color[1], color[2], -1, 1, 0]
+
+        indices += (index+cuatros*23).tolist()
+
+        return createGPUShape(pipeline, bs.Shape(vertices, indices))
+    
+    amortiguadores = sg.SceneGraphNode("Amortiguadores")
+    amortiguadores.childs = [Amortiguadores(pipeline, diam, grosor, altura)]
+    
+
 
     # Bolsillos:
 
@@ -464,10 +736,13 @@ def createNormalTexTable(pipeline, largo, ancho, grosor, diam):
     p0, p1, p2, p3, p4, p5 = (dx-diam,dy-diam), (dx-diam, -dy+diam), (-dx+diam, -dy+diam), (-dx+diam, dy-diam), (0, dy-diam), (0, -dy+diam)
 
     def Bolsillo(pipeline, radio, n):
-        vertices = [0, 0, 0, 0.01, 0.01, 0.01, 0, 0, 1,
-                    radio, 0, 0, 0.01, 0.01, 0.01, 0, 0, 1,
-                    radio, 0, 0, 0.01, 0.01, 0.01, -1, 0, 0,
-                    radio, 0, radio*2, 0.01, 0.01, 0.01, -1, 0, 0]
+        Radio = radio*3
+        vertices = [0, 0, 0, 0.05, 0.05, 0.05, 0, 0, 1,
+                    radio, 0, 0, 0.05, 0.05, 0.05, 0, 0, 1,
+                    radio, 0, 0, 0.05, 0.05, 0.05, -1, 0, 0,
+                    radio, 0, radio*2, 0.05, 0.05, 0.05, -1, 0, 0,
+                    radio, 0, radio*2, 0.2, 0.2, 0.2, 0, 0, 1,
+                    Radio, 0, radio*2, 0.2, 0.2, 0.2, 0, 0, 1]
         indices = []
         dtheta = 2*np.pi/n
         for i in range(1,n+1):
@@ -475,54 +750,55 @@ def createNormalTexTable(pipeline, largo, ancho, grosor, diam):
             rx = radio*np.cos(theta)
             ry = radio*np.sin(theta)
 
-            vertices += [rx, ry, 0, 0.01, 0.01, 0.01, 0, 0, 1]
-            vertices += [rx, ry, 0, 0.01, 0.01, 0.01, radio*np.cos(theta+np.pi), radio*np.sin(theta+np.pi), 0]
-            vertices += [rx, ry, radio*2, 0.01, 0.01, 0.01, radio*np.cos(theta+np.pi), radio*np.sin(theta+np.pi), 0]
+            vertices += [rx, ry, 0, 0.05, 0.05, 0.05, 0, 0, 1]
+            vertices += [rx, ry, 0, 0.05, 0.05, 0.05, radio*np.cos(theta+np.pi), radio*np.sin(theta+np.pi), 0]
+            vertices += [rx, ry, radio*2, 0.05, 0.05, 0.05, radio*np.cos(theta+np.pi), radio*np.sin(theta+np.pi), 0]
+            vertices += [rx, ry, radio*2, 0.2, 0.2, 0.2, 0, 0, 1]
+            if i <= n/3+2:
+                vertices += [Radio*np.cos(theta), Radio*np.sin(theta), radio*2, 0.2, 0.2, 0.2, 0, 0, 1]
+            else:
+                vertices += [2*radio*np.cos(theta), 2*radio*np.sin(theta), radio*2, 0.2, 0.2, 0.2, 0, 0, 1]
 
-            j = 3*i
-            indices += [0, j-2, j+1,
-                        j-1, j, j+2,
-                        j, j+2, j+3] 
+            j = 5*i
+            indices += [0, j-4, j+1,
+                        j-3, j-2, j+2,
+                        j-2, j+2, j+3,
+                        j-1, j, j+4,
+                        j, j+4, j+5] 
 
         return createGPUShape(pipeline, bs.Shape(vertices, indices))
     
     altura += 0.001 - diam
 
     bolsillo1 = sg.SceneGraphNode("bolsillo1")
-    bolsillo1.transform = tr.translate(p0[0], p0[1], altura)
+    bolsillo1.transform = tr.matmul([tr.translate(p0[0], p0[1], altura), tr.rotationZ(np.pi*0.9)])
     bolsillo1.childs = [Bolsillo(pipeline, diam/2, 30)]
 
     bolsillo2 = sg.SceneGraphNode("bolsillo2")
-    bolsillo2.transform = tr.translate(p1[0], p1[1], altura)
+    bolsillo2.transform = tr.matmul([tr.translate(p1[0], p1[1], altura), tr.rotationZ(np.pi*0.4)])
     bolsillo2.childs = [Bolsillo(pipeline, diam/2, 30)]
 
     bolsillo3 = sg.SceneGraphNode("bolsillo3")
-    bolsillo3.transform = tr.translate(p2[0], p2[1], altura)
+    bolsillo3.transform = tr.matmul([tr.translate(p2[0], p2[1], altura), tr.rotationZ(np.pi*1.9)])
     bolsillo3.childs = [Bolsillo(pipeline, diam/2, 30)]
 
     bolsillo4 = sg.SceneGraphNode("bolsillo4")
-    bolsillo4.transform = tr.translate(p3[0], p3[1], altura)
+    bolsillo4.transform = tr.matmul([tr.translate(p3[0], p3[1], altura), tr.rotationZ(np.pi*1.4)])
     bolsillo4.childs = [Bolsillo(pipeline, diam/2, 30)]
 
     bolsillo5 = sg.SceneGraphNode("bolsillo5")
-    bolsillo5.transform = tr.translate(p4[0], p4[1], altura)
+    bolsillo5.transform = tr.matmul([tr.translate(p4[0], p4[1], altura), tr.rotationZ(np.pi*1.1)])
     bolsillo5.childs = [Bolsillo(pipeline, diam/2, 30)]
 
     bolsillo6 = sg.SceneGraphNode("bolsillo6")
-    bolsillo6.transform = tr.translate(p5[0], p5[1], altura)
+    bolsillo6.transform = tr.matmul([tr.translate(p5[0], p5[1], altura), tr.rotationZ(np.pi*0.1)])
     bolsillo6.childs = [Bolsillo(pipeline, diam/2, 30)]
 
     bolsillos = sg.SceneGraphNode("Bolsillos")
     bolsillos.childs = [bolsillo1, bolsillo2, bolsillo3, bolsillo4, bolsillo5, bolsillo6]
 
-
-
-
     mesa = sg.SceneGraphNode("Mesa")
-    mesa.childs = [tela, bolsillos, bordes]
-
-
-
+    mesa.childs = [tela, bolsillos, bordes, amortiguadores, patas]
 
     return mesa
 

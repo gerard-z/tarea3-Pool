@@ -37,7 +37,7 @@ class Bola:
     def draw(self):
         # Dibujar la bola
         glUniformMatrix4fv(glGetUniformLocation(self.pipeline.shaderProgram, "model"), 1, GL_TRUE, tr.matmul([
-            tr.translate(self.position[0], self.position[1], 0.0),
+            tr.translate(self.position[0], self.position[1], self.position[2]),
             tr.uniformScale(self.diam/2)
         ])
         )
