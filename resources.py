@@ -3,16 +3,20 @@
 mecánicas de la aplicación, en resumen, todo lo que no tiene que ver con el apartado de modelos
 geométricos ni la parte gráfica """
 
+from OpenGL.GL import *
 from sys import path_importer_cache
 import glfw
 import numpy as np
 import grafica.transformations as tr
 import grafica.easy_shaders as es
-from shapes3d import *
+import grafica.scene_graph as sg
+import grafica.basic_shapes as bs
+import shapes3d as sh
 from numpy import random as rd
 
 # CLASE CON LOS ELEMENTOS DE LA MESA
 class Bola:
+    """ Las bolas de billar, la clase permite manejar la posición y velocidad de cada bola, calcular sus colisiones y físicas."""
     def __init__(self, pipeline, position):
         # Figura:
         self.model = None
@@ -39,6 +43,21 @@ class Bola:
         )
         self.pipeline.drawCall(self.model)
 
+class MESA:
+    """ La mesa de billar, clase que permite calcular el tamaño de esta, su colision con los bordes, y detectar cuando una bola entre en los bolsillos para considerar el puntaje"""
+    def __init__(self, pipeline):
+        # Figura
+        self.pipeline = pipeline
+        # La posición está fija en el 0,0,0
+        self.tamaño = (2.12, 1.06)
+        self.amortiguador = 0.0365 # Grosor de los amortiguadores
+        self.bolsillos = 0.06 # Diametro de los bolsillos
+
+        self.model = sh.createNormalTexTable(pipeline, self.tamaño[0], self.tamaño[1], self.amortiguador, self.bolsillos)
+
+    def draw(self):
+        # Dibujar la mesa completa
+        sg.drawSceneGraphNode(self.model, self.pipeline, "model")
 
 
 # Cámara en tercera persona
@@ -262,12 +281,12 @@ class Controller:
 class Iluminacion:
     def __init__(self):
         # Características de la luz por defecto
-        self.LightPower = 0.8
-        self.lightConcentration =30
+        self.LightPower = 0.6
+        self.lightConcentration =20
         self.lightShininess = 1
         self.constantAttenuation = 0.01
         self.linearAttenuation = 0.03
-        self.quadraticAttenuation = 0.05
+        self.quadraticAttenuation = 0.04
         self.pipeline = None
 
     # fija los nuevos datos para la luz
@@ -293,7 +312,7 @@ class Iluminacion:
         self.pipeline = Pipeline # Se guarda el shader utilizado
         # Se envían los uniforms
         glUniform3fv(glGetUniformLocation(Pipeline.shaderProgram, "lightPos"), 1, Pos)
-        glUniform3f(glGetUniformLocation(Pipeline.shaderProgram, "La"), 0.3, 0.3, 0.3)
+        glUniform3f(glGetUniformLocation(Pipeline.shaderProgram, "La"), 0.35, 0.35, 0.35)
         glUniform3f(glGetUniformLocation(Pipeline.shaderProgram, "Ld"), LightPower, LightPower, LightPower)
         glUniform3f(glGetUniformLocation(Pipeline.shaderProgram, "Ls"), lightShininess, lightShininess, lightShininess)
 

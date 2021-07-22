@@ -1,4 +1,4 @@
-""" Segunda parte, creación del tobogán, modelando un bote con OBJ, donde el tobogán tiene agua y obstáculos de por medio """
+""" Simulación 3D de una mesa de pool, implementada con las reglas de Blackball. Con medidas reales, considerando los ejes en metros."""
 
 import glfw
 from OpenGL.GL import *
@@ -66,6 +66,8 @@ if __name__ == "__main__":
     glEnable(GL_DEPTH_TEST)
 
     # CREANDO GPU
+    mesa = MESA(phongPipeline)
+
     bolaShape = createNormalTexSphere(40, 20)
     gpuBola1 = createTextureGPUShape(bolaShape, phongTexPipeline, texBola1, minFilterMode=GL_LINEAR)
 
@@ -75,6 +77,8 @@ if __name__ == "__main__":
 
     bola1 = Bola(phongTexPipeline, np.array([0, 0, 0]))
     bola1.setModel(gpuBola1)
+
+
 
     perfMonitor = pm.PerformanceMonitor(glfw.get_time(), 0.5)
     # glfw will swap buffers as soon as possible
@@ -126,16 +130,16 @@ if __name__ == "__main__":
 
         # definiendo parámetros del foco
         if controller.light==1:
-            light.setLight(0.6, 30, 1, [0.01, 0.03, 0.04])
+            light.setLight(0.4, 30, 1, [0.01, 0.03, 0.04])
 
         elif controller.light==2:
-            light.setLight(0.8, 15, 1, [0.01, 0.02, 0.03])
+            light.setLight(0.6, 20, 1, [0.01, 0.02, 0.03])
 
         elif controller.light==4:
             light.setLight(0, 1, 0, [0.01, 0.03, 0.05])
 
         else:
-            light.setLight(1, 6, 1, [0.01, 0.01, 0.01])
+            light.setLight(0.8, 10, 1, [0.01, 0.01, 0.01])
 
         # Setting up the projection transform
         projection = tr.perspective(60, float(width) / float(height), 0.1, 100)
@@ -178,6 +182,7 @@ if __name__ == "__main__":
         #Draw
         glUniformMatrix4fv(glGetUniformLocation(phongPipeline.shaderProgram, "model"), 1, GL_TRUE, tr.matmul([tr.translate(10, 10 ,10), tr.uniformScale(10)]))
         phongPipeline.drawCall(gpuToroid)
+        mesa.draw()
 
 
 
@@ -198,5 +203,6 @@ if __name__ == "__main__":
 
     bola1.model.clear()
     gpuToroid.clear()
+    mesa.model.clear()
 
     glfw.terminate()

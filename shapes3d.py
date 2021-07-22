@@ -297,8 +297,8 @@ def createToroidsNode(pipeline, curve, N):
     return scaledToroid
 
 def createNormalTexSphere(Nphi, Ntheta):
-    """ int -> bs.shape
-    Crea una esfera de N puntos discretizados, con radio 1. Donde tiene incluida sus normales y texturas."""
+    """ int int -> bs.shape
+    Crea una esfera de Nphi puntos discretizados para la rotación 0 a 2pi y Ntheta para la rotación de 0 a pi, con radio 1. Donde tiene incluida sus normales y texturas."""
     vertices = []
     indices = []
     dphi = 2 * np.pi/Nphi
@@ -330,4 +330,201 @@ def createNormalTexSphere(Nphi, Ntheta):
             contador += 4
 
     return bs.Shape(vertices, indices)
+
+
+def createNormalTexTable(pipeline, largo, ancho, grosor, diam):
+    """num num num num -> bs.Shape
+    Crea una mesa de largo (eje X) y ancho (eje Y) personalizado, donde presentará 6 bolsillos en las esquinas y centro del lado largo, con un diametro especificado
+    y además presentará amortiguadores con grosor entregado en los bordes de la mesa. Tendrá una altura específica y el centro se ubicará justo en el 0,0"""
+    altura = 0.8 #Altura de la mesa
+    dx = largo/2
+    dy = ancho/2
+
+    
+
+    # Tela Verde
+    def TelaVerde(pipeline, dx, dy, altura):
+        vertices = []
+        indices = []
+        vertices += [dx, dy, altura, 0.3, 1 , 0.3, 0, 0, 1]
+        vertices += [dx, -dy, altura, 0.3, 1 , 0.3, 0, 0, 1]
+        vertices += [-dx, -dy, altura, 0.3, 1 , 0.3, 0, 0, 1]
+        vertices += [-dx, dy, altura, 0.3, 1 , 0.3, 0, 0, 1]
+
+        indices += [0, 1, 2, 2, 3, 0]
+
+        return createGPUShape(pipeline, bs.Shape(vertices, indices))
+
+    tela = sg.SceneGraphNode("Tela")
+    tela.childs = [TelaVerde(pipeline, dx-3/2*diam, dy-3/2*diam, altura)]
+
+    # Bordes
+    def Bordes(pipeline, dx, dy, radio, altura):
+        vertices = []
+        indices = []
+
+        color = [0.2, 0.1, 0.1]
+
+        vertices += [dx, dy, altura, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [dx, -dy, altura, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [-dx, -dy, altura, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [-dx, dy, altura, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [dx-radio, dy-radio, altura, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [dx-radio, -dy+radio, altura, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [-dx+radio, -dy+radio, altura, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [-dx+radio, dy-radio, altura, color[0], color[1], color[2], 0, 0, 1]
+
+        indices += [0, 4, 5, 0, 1, 5,
+                    1, 5, 6, 1, 2, 6,
+                    2, 6, 7, 2, 3, 7,
+                    3, 7, 4, 3, 0, 4]
+
+        altura1 = altura + radio*2
+        vertices += [dx, dy, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [dx, -dy, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [-dx, -dy, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [-dx, dy, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [dx-radio, dy-radio, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [dx-radio, -dy+radio, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [-dx+radio, -dy+radio, altura1, color[0], color[1], color[2], 0, 0, 1]
+        vertices += [-dx+radio, dy-radio, altura1, color[0], color[1], color[2], 0, 0, 1]
+
+        indices += [8, 12, 13, 8, 9, 13,
+                    9, 13, 14, 9, 10, 14,
+                    10, 14, 15, 10, 11, 15,
+                    11, 15, 12, 11, 8, 12]
+
+        # índice en 16
+        
+        vertices += [dx-radio, dy-radio, altura, color[0], color[1], color[2], -1, 0, 0]
+        vertices += [dx-radio, -dy+radio, altura, color[0], color[1], color[2], -1, 0, 0]
+        vertices += [dx-radio, dy-radio, altura1, color[0], color[1], color[2], -1, 0, 0]
+        vertices += [dx-radio, -dy+radio, altura1, color[0], color[1], color[2], -1, 0, 0]
+
+        indices += [16, 17, 18, 17, 18, 19]
+
+        vertices += [dx-radio, dy-radio, altura, color[0], color[1], color[2], 0, -1, 0]
+        vertices += [-dx+radio, dy-radio, altura, color[0], color[1], color[2], 0, -1, 0]
+        vertices += [dx-radio, dy-radio, altura1, color[0], color[1], color[2], 0, -1, 0]
+        vertices += [-dx+radio, dy-radio, altura1, color[0], color[1], color[2], 0, -1, 0]
+
+        indices += [20, 21, 22, 21, 22, 23]
+
+        vertices += [-dx+radio, -dy+radio, altura, color[0], color[1], color[2], 1, 0, 0]
+        vertices += [-dx+radio, dy-radio, altura, color[0], color[1], color[2], 1, 0, 0]
+        vertices += [-dx+radio, -dy+radio, altura1, color[0], color[1], color[2], 1, 0, 0]
+        vertices += [-dx+radio, dy-radio, altura1, color[0], color[1], color[2], 1, 0, 0]
+
+        indices += [24, 25, 26, 25, 26, 27]
+
+        vertices += [-dx+radio, -dy+radio, altura, color[0], color[1], color[2], 0, 1, 0]
+        vertices += [dx-radio, -dy+radio, altura, color[0], color[1], color[2], 0, 1, 0]
+        vertices += [-dx+radio, -dy+radio, altura1, color[0], color[1], color[2], 0, 1, 0]
+        vertices += [dx-radio, -dy+radio, altura1, color[0], color[1], color[2], 0, 1, 0]
+
+        indices += [28, 29, 30, 29, 30, 31]
+
+        vertices += [dx, dy, altura, color[0], color[1], color[2], 1, 0, 0]
+        vertices += [dx, -dy, altura, color[0], color[1], color[2], 1, 0, 0]
+        vertices += [dx, dy, altura1, color[0], color[1], color[2], 1, 0, 0]
+        vertices += [dx, -dy, altura1, color[0], color[1], color[2], 1, 0, 0]
+
+        indices += [32, 33, 34, 33, 34, 35]
+
+        vertices += [dx, dy, altura, color[0], color[1], color[2], 0, 1, 0]
+        vertices += [-dx, dy, altura, color[0], color[1], color[2], 0, 1, 0]
+        vertices += [dx, dy, altura1, color[0], color[1], color[2], 0, 1, 0]
+        vertices += [-dx, dy, altura1, color[0], color[1], color[2], 0, 1, 0]
+
+        indices += [36, 37, 38, 37, 38, 39]
+
+        vertices += [-dx, -dy, altura, color[0], color[1], color[2], -1, 0, 0]
+        vertices += [-dx, dy, altura, color[0], color[1], color[2], -1, 0, 0]
+        vertices += [-dx, -dy, altura1, color[0], color[1], color[2], -1, 0, 0]
+        vertices += [-dx, dy, altura1, color[0], color[1], color[2], -1, 0, 0]
+
+        indices += [40, 41, 42, 41, 42, 43]
+
+        vertices += [-dx, -dy, altura, color[0], color[1], color[2], 0, -1, 0]
+        vertices += [dx, -dy, altura, color[0], color[1], color[2], 0, -1, 0]
+        vertices += [-dx, -dy, altura1, color[0], color[1], color[2], 0, -1, 0]
+        vertices += [dx, -dy, altura1, color[0], color[1], color[2], 0, -1, 0]
+
+        indices += [44, 45, 46, 45, 46, 47]
+
+        return createGPUShape(pipeline, bs.Shape(vertices, indices))
+
+    bordes = sg.SceneGraphNode("Bordes")
+    bordes.childs = [Bordes(pipeline, dx, dy, diam/2, altura)]
+
+
+    # Bolsillos:
+
+    #Ubiucación de los centros de cada bolsillo
+    p0, p1, p2, p3, p4, p5 = (dx-diam,dy-diam), (dx-diam, -dy+diam), (-dx+diam, -dy+diam), (-dx+diam, dy-diam), (0, dy-diam), (0, -dy+diam)
+
+    def Bolsillo(pipeline, radio, n):
+        vertices = [0, 0, 0, 0.01, 0.01, 0.01, 0, 0, 1,
+                    radio, 0, 0, 0.01, 0.01, 0.01, 0, 0, 1,
+                    radio, 0, 0, 0.01, 0.01, 0.01, -1, 0, 0,
+                    radio, 0, radio*2, 0.01, 0.01, 0.01, -1, 0, 0]
+        indices = []
+        dtheta = 2*np.pi/n
+        for i in range(1,n+1):
+            theta = i*dtheta
+            rx = radio*np.cos(theta)
+            ry = radio*np.sin(theta)
+
+            vertices += [rx, ry, 0, 0.01, 0.01, 0.01, 0, 0, 1]
+            vertices += [rx, ry, 0, 0.01, 0.01, 0.01, radio*np.cos(theta+np.pi), radio*np.sin(theta+np.pi), 0]
+            vertices += [rx, ry, radio*2, 0.01, 0.01, 0.01, radio*np.cos(theta+np.pi), radio*np.sin(theta+np.pi), 0]
+
+            j = 3*i
+            indices += [0, j-2, j+1,
+                        j-1, j, j+2,
+                        j, j+2, j+3] 
+
+        return createGPUShape(pipeline, bs.Shape(vertices, indices))
+    
+    altura += 0.001 - diam
+
+    bolsillo1 = sg.SceneGraphNode("bolsillo1")
+    bolsillo1.transform = tr.translate(p0[0], p0[1], altura)
+    bolsillo1.childs = [Bolsillo(pipeline, diam/2, 30)]
+
+    bolsillo2 = sg.SceneGraphNode("bolsillo2")
+    bolsillo2.transform = tr.translate(p1[0], p1[1], altura)
+    bolsillo2.childs = [Bolsillo(pipeline, diam/2, 30)]
+
+    bolsillo3 = sg.SceneGraphNode("bolsillo3")
+    bolsillo3.transform = tr.translate(p2[0], p2[1], altura)
+    bolsillo3.childs = [Bolsillo(pipeline, diam/2, 30)]
+
+    bolsillo4 = sg.SceneGraphNode("bolsillo4")
+    bolsillo4.transform = tr.translate(p3[0], p3[1], altura)
+    bolsillo4.childs = [Bolsillo(pipeline, diam/2, 30)]
+
+    bolsillo5 = sg.SceneGraphNode("bolsillo5")
+    bolsillo5.transform = tr.translate(p4[0], p4[1], altura)
+    bolsillo5.childs = [Bolsillo(pipeline, diam/2, 30)]
+
+    bolsillo6 = sg.SceneGraphNode("bolsillo6")
+    bolsillo6.transform = tr.translate(p5[0], p5[1], altura)
+    bolsillo6.childs = [Bolsillo(pipeline, diam/2, 30)]
+
+    bolsillos = sg.SceneGraphNode("Bolsillos")
+    bolsillos.childs = [bolsillo1, bolsillo2, bolsillo3, bolsillo4, bolsillo5, bolsillo6]
+
+
+
+
+    mesa = sg.SceneGraphNode("Mesa")
+    mesa.childs = [tela, bolsillos, bordes]
+
+
+
+
+    return mesa
+
+
 

@@ -13,4 +13,4 @@ bolas de billar: miden 51mm diámetro.
 
 bola blanca: 48mm
 
-mesa de billar: tiene seis bolsillos, en cada esquina y en el centro de las bandas largas. Los amortiguadores (los bordes para que los rebotes sean lo más elásticos posibles) tienen un grosor de 36.5 mm  (Mide 2.12m x 1.06m), los bolsillos miden un poco más grandes que las bolas.
+mesa de billar: tiene seis bolsillos, en cada esquina y en el centro de las bandas largas. Los amortiguadores (los bordes para que los rebotes sean lo más elásticos posibles) tienen un grosor de 36.5 mm  (Mide 2.12m x 1.06m, área jugable: 1.93m x 0.965m), los bolsillos miden un poco más grandes que las bolas.
