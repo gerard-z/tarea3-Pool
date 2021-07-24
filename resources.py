@@ -112,11 +112,30 @@ class TACO:
         self.pipeline = pipeline
         self.position = posicion
         self.model = sh.createNormalColorCuestrick(pipeline)
+        self.phi = 0
+        self.theta = 0
+
+    def orientation(self, controller):
+        """ Orienta al taco según la ubicación de las cámaras"""
+        assert isinstance(controller, Controller)
+        at = controller.getAtCamera()
+        eye = controller.getEyeCamera()
+        if controller.camara1:
+            theta = controller.camera.theta # rotacionZ
+            phi = controller.camera.phi #rotacionY
+            if controller.rightClickOn:
+                self.phi = phi-np.pi/2
+            else:
+                self.phi = -np.pi/2
+            self.theta = theta
+            self.position = np.array([eye[0], eye[1], eye[2]-0.1])
+
 
     def draw(self):
         # Dibujar el taco
         glUniformMatrix4fv(glGetUniformLocation(self.pipeline.shaderProgram, "model"), 1, GL_TRUE, tr.matmul([
-            tr.translate(self.position[0], self.position[1], self.position[2])
+            tr.translate(self.position[0], self.position[1], self.position[2]),
+            tr.rotationZ(self.theta), tr.rotationY(self.phi)
         ])
         )
         self.pipeline.drawCall(self.model)
@@ -127,21 +146,40 @@ class TACO:
 # Cámara en tercera persona
 class ThirdCamera:
     def __init__(self, x, y , z):
-        self.at = np.array([x, y, z+0.1])
+        self.at = np.array([x, y, z])
         self.theta = -np.pi/2
-        self.eye = np.array([x, y - 3.0, z + 0.1])
+        self.eye = np.array([x, y - 0.3, z + 0.3])
         self.up = np.array([0, 0, 1])
 
     # Determina el ángulo theta
     def set_theta(self, theta):
         self.theta = theta
 
+    # Actualiza el objetivo a mirar
+    def updateAt(self, x, y, z):
+        self.at = np.array([x, y, z])
+
     # Actualiza la matriz de vista y la retorna
     def update_view(self):
-        self.eye[0] = 3 * np.cos(self.theta) + self.at[0]
-        self.eye[1] = 3 * np.sin(self.theta) + self.at[1]
-        self.eye[2] = self.at[2]
+        self.eye[0] = 0.3 * np.cos(self.theta) + self.at[0]
+        self.eye[1] = 0.3 * np.sin(self.theta) + self.at[1]
 
+        viewMatrix = tr.lookAt(
+            self.eye,
+            self.at,
+            self.up
+        )
+        return viewMatrix
+
+class SecondCamera:
+    def __init__(self):
+        self.at = np.array([0, 0, -1])
+        self.eye = np.array([0., 0., 3])
+        self.up = np.array([0, 1, 0])
+
+
+    # Actualiza la matriz de vista y la retorna
+    def update_view(self):
         viewMatrix = tr.lookAt(
             self.eye,
             self.at,
@@ -152,7 +190,7 @@ class ThirdCamera:
 class FirstCamera:
     def __init__(self, x, y, z):
         self.at = np.array([x, y + 1.0, z - 0.4])
-        self.theta = -np.pi/2
+        self.theta = 0
         self.phi = np.pi/2
         self.eye = np.array([x, y, z + 0.0])
         self.up = np.array([0, 0, 1])
@@ -166,9 +204,9 @@ class FirstCamera:
 
     # Actualiza la matriz de vista y la retorna
     def update_view(self):
-        self.at[0] = 3*np.cos(self.theta) * np.sin(self.phi) + self.eye[0]
-        self.at[1] = 3*np.sin(self.theta) * np.sin(self.phi) + self.eye[1]
-        self.at[2] = 3*np.cos(self.phi) + self.eye[2]
+        self.at[0] = np.cos(self.theta) * np.sin(self.phi) + self.eye[0]
+        self.at[1] = np.sin(self.theta) * np.sin(self.phi) + self.eye[1]
+        self.at[2] = np.cos(self.phi) + self.eye[2]
 
         viewMatrix = tr.lookAt(
             self.eye,
@@ -187,13 +225,15 @@ class Controller:
         self.width = width
         self.height = height
 
-        self.camera = FirstCamera(0, 0, 2.5)
-        self.camara = 1
-        self.camara1 = True
-        self.camara2 = False
+        self.camera = SecondCamera()
+        self.camara = 2
+        self.camara1 = False
+        self.camara2 = True
         self.camara3 = False
 
         self.light = 3
+
+        self.selector = 0
 
         self.w = False
         self.s = False
@@ -253,6 +293,12 @@ class Controller:
 
             if key == glfw.KEY_V:
                 self.light = 4
+
+            if key == glfw.KEY_Q:
+                self.selector-=1
+            
+            if key == glfw.KEY_E:
+                self.selector+=1
             
             if key == glfw.KEY_UP:
                 self.reset = True
@@ -322,8 +368,10 @@ class Controller:
                 self.rightClickOn = False
 
     #Funcion que recibe el input para manejar la camara y el tipo de esta, incluye ek movimiento del personaje
-    def update_camera(self, delta, mesa):
+    def update_camera(self, delta, mesa, Bolas):
         dx, dy = mesa.tamaño[0]/2, mesa.tamaño[1]/2
+        bolavista = Bolas[self.selector]
+        print(bolavista.position)
         # Selecciona la cámara a utilizar
         if self.camara==1 and not self.camara1:
             x = 0
@@ -331,46 +379,55 @@ class Controller:
             z = 1.2
             self.camera = FirstCamera(x, y, z)
             self.camara1 = True
+            self.camara2 = False
+            self.camara3 = False
+        elif self.camara==2 and not self.camara2:
+            self.camera = SecondCamera()
+            self.camara1 = False
+            self.camara2 = True
             self.camara3 = False
         elif self.camara==3 and not self.camara3:
-            x = self.camera.eye[0]
-            y = self.camera.eye[1]
-            z = self.camera.eye[2]
+            pos = bolavista.position
+            x = pos[0]
+            y = pos[1]
+            z = pos[2]
             self.camera = ThirdCamera(x, y, z)
             self.camara1 = False
+            self.camara2=  False
             self.camara3 = True
 
-        direction = self.camera.at[0:2] - self.camera.eye[0:2]
-        direction = np.array([direction[0], direction[1], 0])
-        direction /= np.linalg.norm(direction)
-        rotatedir = np.array([-direction[1], direction[0], 0])
-        theta = -self.mousePos[0] * 2 * np.pi - np.pi/2
+        if self.camara1 or self.camara3:
+            direction = self.camera.at[0:2] - self.camera.eye[0:2]
+            direction = np.array([direction[0], direction[1], 0])
+            direction /= np.linalg.norm(direction)
+            rotatedir = np.array([-direction[1], direction[0], 0])
+            theta = -self.mousePos[0] * 2 * np.pi - np.pi/2
 
-        mouseY = self.mousePos[1]
-        phi = mouseY * (np.pi/2-0.01) + np.pi/2
+            mouseY = self.mousePos[1]
+            phi = mouseY * (np.pi/2-0.01) + np.pi/2
 
-        if self.camara == 3:
-            if self.leftClickOn:
-                self.camera.at += direction * delta
+            if self.camara == 1:
+                if self.w:
+                    self.camera.eye += direction * delta
 
-            if self.rightClickOn:
-                self.camera.at -= direction * delta
+                if self.s:
+                    self.camera.eye -= direction * delta
 
-        elif self.camara == 1:
-            if self.w:
-                self.camera.eye += direction * delta
+                if self.a:
+                    self.camera.eye += rotatedir * delta
 
-            if self.s:
-                self.camera.eye -= direction * delta
+                if self.d:
+                    self.camera.eye -= rotatedir * delta
+                self.camera.set_phi(phi)
 
-            if self.a:
-                self.camera.eye += rotatedir * delta
+            if self.camera == 3:
+                pos = bolavista.position
+                x = pos[0]
+                y = pos[1]
+                z = pos[2]
+                self.camera.updateAt(x, y, z)
 
-            if self.d:
-                self.camera.eye -= rotatedir * delta
-            self.camera.set_phi(phi)
-
-        self.camera.set_theta(theta)
+            self.camera.set_theta(theta)
 
 # Clase iluminación, crea los parámetros y las funciones para inicializar los shaders con normales.
 class Iluminacion:

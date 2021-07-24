@@ -814,18 +814,18 @@ def createNormalColorCuestrick(pipeline):
     Largo = 1.4
     largo = 0.02
 
-    vertices = [0, 0, 0, 183/255, 166/255, 127/255, -1, 0, 0, #0
-                Largo + largo, 0, 0, 0.7, 0.7, 0.7, 1, 0, 0, #1
-                0, r1, 0, 183/255, 166/255, 127/255, 0, 1, 0, #j-8
-                0, r1, 0, 183/255, 166/255, 127/255, -1, 0, 0, #j-7
-                Largo/2-0.05, r2, 0, 223/255, 203/255, 155/255, 0, 1, 0, #j-6
-                Largo/2-0.05, r2, 0, 1, 0, 0, 0, 1, 0, #j-5
-                Largo/2+0.05, r2, 0, 1, 0, 0, 0, 1, 0, #j-4
-                Largo/2+0.05, r2, 0, 223/255, 203/255, 155/255, 0, 1, 0, #j-3
-                Largo, r3, 0, 1, 232/255, 180/255, 0, 1, 0, #j-2
-                Largo, r, 0, 0.7, 0.7, 0.7, 0, 1, 0,  ## j-1
-                Largo + largo, r, 0, 0.7, 0.7, 0.7, 0, 1, 0, #j
-                Largo + largo, r, 0, 0.7, 0.7, 0.7, 1, 0, 0] #j+1
+    vertices = [-0.6, 0, 0, 183/255, 166/255, 127/255, -1, 0, 0, #0
+                -0.6 + Largo + largo, 0, 0, 0.7, 0.7, 0.7, 1, 0, 0, #1
+                -0.6, r1, 0, 183/255, 166/255, 127/255, 0, 1, 0, #j-8
+                -0.6, r1, 0, 183/255, 166/255, 127/255, -1, 0, 0, #j-7
+                -0.6 + Largo/2-0.05, r2, 0, 223/255, 203/255, 155/255, 0, 1, 0, #j-6
+                -0.6 + Largo/2-0.05, r2, 0, 1, 0, 0, 0, 1, 0, #j-5
+                -0.6 + Largo/2+0.05, r2, 0, 1, 0, 0, 0, 1, 0, #j-4
+                -0.6 + Largo/2+0.05, r2, 0, 223/255, 203/255, 155/255, 0, 1, 0, #j-3
+                -0.6 + Largo, r3, 0, 1, 232/255, 180/255, 0, 1, 0, #j-2
+                -0.6 + Largo, r, 0, 0.7, 0.7, 0.7, 0, 1, 0,  ## j-1
+                -0.6 + Largo + largo, r, 0, 0.7, 0.7, 0.7, 0, 1, 0, #j
+                -0.6 + Largo + largo, r, 0, 0.7, 0.7, 0.7, 1, 0, 0] #j+1
     indices = []
 
     n = 25 # discretización del cilindro
@@ -835,16 +835,16 @@ def createNormalColorCuestrick(pipeline):
         cs = np.cos(theta)
         sn = np.sin(theta)
 
-        vertices += [0, r1*cs, r1*sn, 183/255, 166/255, 127/255, 0, cs, sn] #j+2
-        vertices += [0, r1*cs, r1*sn, 183/255, 166/255, 127/255, -1, 0, 0] #j+3
-        vertices += [Largo/2-0.05, r2*cs, r2*sn, 223/255, 203/255, 155/255, 0, cs, sn] #j+4
-        vertices += [Largo/2-0.05, r2*cs, r2*sn, 1, 0, 0, 0, cs, sn] #j+5
-        vertices += [Largo/2+0.05, r2*cs, r2*sn, 1, 0, 0, 0, cs, sn] #j+6
-        vertices += [Largo/2+0.05, r2*cs, r2*sn, 223/255, 203/255, 155/255, 0, cs, sn] #j+7
-        vertices += [Largo, r3*cs, r3*sn, 1, 232/255, 180/255, 0, cs, sn] #j+8
-        vertices += [Largo, r*cs, r*sn, 0.7, 0.7, 0.7, 0, cs, sn] #j+9
-        vertices += [Largo + largo, r*cs, r*sn, 0.7, 0.7, 0.7, 0, cs, sn] #j+10
-        vertices += [Largo + largo, r*cs, r*sn, 0.7, 0.7, 0.7, 1, 0, 0] #j+11
+        vertices += [-0.6, r1*cs, r1*sn, 183/255, 166/255, 127/255, 0, cs, sn] #j+2
+        vertices += [-0.6, r1*cs, r1*sn, 183/255, 166/255, 127/255, -1, 0, 0] #j+3
+        vertices += [-0.6 + Largo/2-0.05, r2*cs, r2*sn, 223/255, 203/255, 155/255, 0, cs, sn] #j+4
+        vertices += [-0.6 + Largo/2-0.05, r2*cs, r2*sn, 1, 0, 0, 0, cs, sn] #j+5
+        vertices += [-0.6 + Largo/2+0.05, r2*cs, r2*sn, 1, 0, 0, 0, cs, sn] #j+6
+        vertices += [-0.6 + Largo/2+0.05, r2*cs, r2*sn, 223/255, 203/255, 155/255, 0, cs, sn] #j+7
+        vertices += [-0.6 + Largo, r3*cs, r3*sn, 1, 232/255, 180/255, 0, cs, sn] #j+8
+        vertices += [-0.6 + Largo, r*cs, r*sn, 0.7, 0.7, 0.7, 0, cs, sn] #j+9
+        vertices += [-0.6 + Largo + largo, r*cs, r*sn, 0.7, 0.7, 0.7, 0, cs, sn] #j+10
+        vertices += [-0.6 + Largo + largo, r*cs, r*sn, 0.7, 0.7, 0.7, 1, 0, 0] #j+11
 
         j = 10 * i
         indices += [0, j-7, j+3,  j-8, j+2, j-6,

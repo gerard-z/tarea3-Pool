@@ -141,6 +141,10 @@ if __name__ == "__main__":
 
     Bolas = [bola0, bola1, bola2, bola3, bola4, bola5, bola6, bola7, bola8, bola9, bola10, bola11, bola12, bola13, bola14, bola15]
 
+    # iluminación
+    lightPos = np.array([0., 0., 5])
+    lightDirection = np.array([0, 0, -1])
+
 
 
     perfMonitor = pm.PerformanceMonitor(glfw.get_time(), 0.5)
@@ -176,7 +180,7 @@ if __name__ == "__main__":
         if (glfw.get_key(window, glfw.KEY_RIGHT) == glfw.PRESS) and phi>=-np.pi*0.2:
             phi -= delta
         # Definimos la cámara de la aplicación
-        controller.update_camera(delta, mesa)
+        controller.update_camera(delta, mesa, Bolas)
         camera = controller.get_camera()
 
         viewMatrix = camera.update_view()
@@ -190,14 +194,13 @@ if __name__ == "__main__":
         pos = controller.getEyeCamera()
         dir = controller.getAtCamera()
 
-        # iluminación
-        lightPos = np.array([0., 0., 5])
-        lightDirection = np.array([0, 0, -1])
+        # Orientacion de dibujos
+        taco.orientation(controller)
 
 
         # definiendo parámetros del foco
         if controller.light==1:
-            light.setLight(0.2, 10, 0.8, [0.01, 0.03, 0.04])
+            light.setLight(0.2, 10, 0.8, [0.01, 0.02, 0.03])
 
         elif controller.light==2:
             light.setLight(0.4, 10, 0.8, [0.01, 0.02, 0.03])
@@ -206,7 +209,7 @@ if __name__ == "__main__":
             light.setLight(0, 1, 0, [0.01, 0.03, 0.05])
 
         else:
-            light.setLight(0.6, 10, 0.8, [0.01, 0.01, 0.01])
+            light.setLight(0.6, 10, 0.8, [0.01, 0.02, 0.03])
 
         # Setting up the projection transform
         projection = tr.perspective(60, float(width) / float(height), 0.1, 100)
