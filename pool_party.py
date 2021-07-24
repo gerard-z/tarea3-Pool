@@ -68,6 +68,7 @@ if __name__ == "__main__":
 
     # CREANDO GPU
     mesa = MESA(phongPipeline)
+    taco = TACO(phongPipeline, np.array([-1, 0, 0.9]))
 
     bolaShape = createNormalTexSphere(40, 20)
     gpuBola1 = createTextureGPUShape(bolaShape, phongTexPipeline, texBola1, minFilterMode=GL_LINEAR)
@@ -99,15 +100,19 @@ if __name__ == "__main__":
     gpuBola14.texture = es.textureSimpleSetup(texBola14, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
     gpuBola15 = copy.deepcopy(gpuBola1)
     gpuBola15.texture = es.textureSimpleSetup(texBola15, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+    gpuBola0 = copy.deepcopy(gpuBola1)
+    gpuBola0.texture = es.textureSimpleSetup(texBolaBlanca, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
 
     
 
-
+    bola0 = Bola(phongTexPipeline, np.array([0, 0.47, 0.9]))
+    bola0.diam = 0.048
+    bola0.setModel(gpuBola0)
     bola1 = Bola(phongTexPipeline, np.array([0.5, 0.204, 0.9]))
     bola1.setModel(gpuBola1)
     bola2 = Bola(phongTexPipeline, np.array([0.5, 0.102, 0.9]))
     bola2.setModel(gpuBola2)
-    bola3 = Bola(phongTexPipeline, np.array([0.5, 0, 0.9]))
+    bola3 = Bola(phongTexPipeline, np.array([0.5, 0., 0.9]))
     bola3.setModel(gpuBola3)
     bola4 = Bola(phongTexPipeline, np.array([0.5, -0.102, 0.9]))
     bola4.setModel(gpuBola4)
@@ -123,7 +128,7 @@ if __name__ == "__main__":
     bola9.setModel(gpuBola9)
     bola10 = Bola(phongTexPipeline, np.array([0.296, 0.101, 0.9]))
     bola10.setModel(gpuBola10)
-    bola11 = Bola(phongTexPipeline, np.array([0.296, 0, 0.9]))
+    bola11 = Bola(phongTexPipeline, np.array([0.296, 0., 0.9]))
     bola11.setModel(gpuBola11)
     bola12 = Bola(phongTexPipeline, np.array([0.296, -0.101, 0.9]))
     bola12.setModel(gpuBola12)
@@ -131,8 +136,10 @@ if __name__ == "__main__":
     bola13.setModel(gpuBola13)
     bola14 = Bola(phongTexPipeline, np.array([0.194, -0.051, 0.9]))
     bola14.setModel(gpuBola14)
-    bola15 = Bola(phongTexPipeline, np.array([0.092, 0, 0.9]))
+    bola15 = Bola(phongTexPipeline, np.array([0.092, 0., 0.9]))
     bola15.setModel(gpuBola15)
+
+    Bolas = [bola0, bola1, bola2, bola3, bola4, bola5, bola6, bola7, bola8, bola9, bola10, bola11, bola12, bola13, bola14, bola15]
 
 
 
@@ -169,33 +176,37 @@ if __name__ == "__main__":
         if (glfw.get_key(window, glfw.KEY_RIGHT) == glfw.PRESS) and phi>=-np.pi*0.2:
             phi -= delta
         # Definimos la cámara de la aplicación
-        controller.update_camera(delta)
+        controller.update_camera(delta, mesa)
         camera = controller.get_camera()
 
         viewMatrix = camera.update_view()
 
         T += 3*delta * velocidad
 
+        # Físicas
+        for bola in Bolas:
+            bola.interactionTable(mesa)
+
         pos = controller.getEyeCamera()
         dir = controller.getAtCamera()
 
         # iluminación
-        lightPos = np.array(pos)
-        lightDirection = dir - pos
+        lightPos = np.array([0., 0., 5])
+        lightDirection = np.array([0, 0, -1])
 
 
         # definiendo parámetros del foco
         if controller.light==1:
-            light.setLight(0.4, 30, 1, [0.01, 0.03, 0.04])
+            light.setLight(0.2, 10, 0.8, [0.01, 0.03, 0.04])
 
         elif controller.light==2:
-            light.setLight(0.6, 20, 1, [0.01, 0.02, 0.03])
+            light.setLight(0.4, 10, 0.8, [0.01, 0.02, 0.03])
 
         elif controller.light==4:
             light.setLight(0, 1, 0, [0.01, 0.03, 0.05])
 
         else:
-            light.setLight(0.8, 10, 1, [0.01, 0.01, 0.01])
+            light.setLight(0.6, 10, 0.8, [0.01, 0.01, 0.01])
 
         # Setting up the projection transform
         projection = tr.perspective(60, float(width) / float(height), 0.1, 100)
@@ -221,21 +232,8 @@ if __name__ == "__main__":
         glUniform3f(glGetUniformLocation(phongTexPipeline.shaderProgram, "Ks"), 1.0, 1.0, 1.0)
 
         # Drawing
-        bola1.draw()
-        bola2.draw()
-        bola3.draw()
-        bola4.draw()
-        bola5.draw()
-        bola6.draw()
-        bola7.draw()
-        bola8.draw()
-        bola9.draw()
-        bola10.draw()
-        bola11.draw()
-        bola12.draw()
-        bola13.draw()
-        bola14.draw()
-        bola15.draw()
+        for bola in Bolas:
+            bola.draw()
         
 
         # Shader de iluminación para objetos sin texturas
@@ -252,6 +250,7 @@ if __name__ == "__main__":
         #Draw
         glUniformMatrix4fv(glGetUniformLocation(phongPipeline.shaderProgram, "model"), 1, GL_TRUE, tr.matmul([tr.translate(0, 0 ,0), tr.uniformScale(1)]))
         mesa.draw()
+        taco.draw()
 
 
 
@@ -270,7 +269,9 @@ if __name__ == "__main__":
         # Once the drawing is rendered, buffers are swap so an uncomplete drawing is never seen.
         glfw.swap_buffers(window)
 
-    bola1.model.clear()
+    for bola in Bolas:
+        bola.model.clear()
     mesa.model.clear()
+    taco.model.clear()
 
     glfw.terminate()

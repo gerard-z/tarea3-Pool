@@ -7,11 +7,13 @@ from OpenGL.GL import *
 from sys import path_importer_cache
 import glfw
 import numpy as np
+from numpy.linalg import linalg
 import grafica.transformations as tr
 import grafica.easy_shaders as es
 import grafica.scene_graph as sg
 import grafica.basic_shapes as bs
 import shapes3d as sh
+import grafica.odeResolver as ode
 from numpy import random as rd
 
 # CLASE CON LOS ELEMENTOS DE LA MESA
@@ -23,7 +25,7 @@ class Bola:
         self.diam = 0.051 # Diametro de las bolas (Para todas las bolas de número, la bola blanca mide 0.048)
         self.pipeline = pipeline # Pipeline de la bola
         self.position = position
-        self.velocity = 0 # Las pelotas siempre comienzan con velocidad 0
+        self.velocity = np.array([0., 0., 0.]) # Las pelotas siempre comienzan con velocidad 0
 
     def setModel(self, model):
         # Define la gpushape de la bola
@@ -33,6 +35,51 @@ class Bola:
         # Se modifican la velocidad y posición
         self.position = pos
         self.velocity = vel
+
+    def interactionTable(self, mesa):
+        """ Se le entrega la mesa donde está jugando, para detectar colisiones con la mesa y la gravedad ligada a esta, utilizando la aproximación por euler"""
+        assert isinstance(mesa, MESA)
+        tamaño = mesa.tamaño
+        altura = 0.8
+        diam = mesa.bolsillos
+
+        X, Y = tamaño[0], tamaño[1]
+        dx, dy = X/2, Y/2
+
+        # detección de estar dentro del bolsillo (para caer posteriormente)
+        def sobreBolsillo(x, y, pos, radio):
+            diferencia = pos-np.array([x, y, pos[2]])
+            distancia = np.linalg.norm(diferencia)
+            return distancia <= radio
+        
+        # Calcula la gravedad
+        def gravedad(t, y0):
+            return np.array([y0[1], -1])
+
+        y0 = np.array([self.position[2], self.velocity[2]])
+        
+        yfinal = ode.euler(0.01, 0, y0, gravedad) # Se utiliza tiempo 0, porque en realidad el tiempo es independiente de la gravedad.
+        
+        self.position[2] = yfinal[0]
+        self.velocity[2] = yfinal[1]
+        
+        pos = self.position
+        sobrebolsillodx = sobreBolsillo(dx-diam, dy-diam, pos, diam) or sobreBolsillo(dx-diam, -dy+diam, pos, diam)
+        sobrebolsillo0 = sobreBolsillo(0, dy-diam, pos, diam) or sobreBolsillo(0, -dy+diam, pos, diam)
+        sobrebolsillodx2 = sobreBolsillo(-dx+diam, dy-diam, pos, diam) or sobreBolsillo(-dx+diam, -dy+diam, pos, diam)
+
+        posbajo = self.position[2]-self.diam/1.9
+
+        if sobrebolsillodx or sobrebolsillo0 or sobrebolsillodx2:
+            if posbajo <= altura - diam:
+                self.velocity[2] = 0
+        elif posbajo <= altura:
+            self.velocity[2] = 0
+
+
+
+
+
 
     def draw(self):
         # Dibujar la bola
@@ -53,11 +100,28 @@ class MESA:
         self.amortiguador = 0.0365 # Grosor de los amortiguadores
         self.bolsillos = 0.06 # Diametro de los bolsillos
 
-        self.model = sh.createNormalTexTable(pipeline, self.tamaño[0], self.tamaño[1], self.amortiguador, self.bolsillos)
+        self.model = sh.createNormalColorTable(pipeline, self.tamaño[0], self.tamaño[1], self.amortiguador, self.bolsillos)
 
     def draw(self):
         # Dibujar la mesa completa
         sg.drawSceneGraphNode(self.model, self.pipeline, "model")
+
+class TACO:
+    """ Taco que utilizará el jugador para golpear la pelota."""
+    def __init__(self, pipeline, posicion):
+        self.pipeline = pipeline
+        self.position = posicion
+        self.model = sh.createNormalColorCuestrick(pipeline)
+
+    def draw(self):
+        # Dibujar el taco
+        glUniformMatrix4fv(glGetUniformLocation(self.pipeline.shaderProgram, "model"), 1, GL_TRUE, tr.matmul([
+            tr.translate(self.position[0], self.position[1], self.position[2])
+        ])
+        )
+        self.pipeline.drawCall(self.model)
+
+
 
 
 # Cámara en tercera persona
@@ -87,7 +151,7 @@ class ThirdCamera:
 
 class FirstCamera:
     def __init__(self, x, y, z):
-        self.at = np.array([x, y + 3.0, z + 0.0])
+        self.at = np.array([x, y + 1.0, z - 0.4])
         self.theta = -np.pi/2
         self.phi = np.pi/2
         self.eye = np.array([x, y, z + 0.0])
@@ -120,17 +184,21 @@ class FirstCamera:
 class Controller:
     def __init__(self, width, height):
         self.fillPolygon = True
-        self.waterEffect = False
         self.width = width
         self.height = height
 
-        self.is_a_pressed = True
-        self.is_t_pressed = True
-
         self.camera = FirstCamera(0, 0, 2.5)
         self.camara = 1
+        self.camara1 = True
+        self.camara2 = False
+        self.camara3 = False
 
         self.light = 3
+
+        self.w = False
+        self.s = False
+        self.a = False
+        self.d = False
 
         self.reset = False
         self.empezar = False
@@ -165,30 +233,55 @@ class Controller:
             if key == glfw.KEY_ESCAPE:
                 glfw.set_window_should_close(window, True)
 
-            if key == glfw.KEY_LEFT_CONTROL:
-                self.waterEffect = not self.waterEffect
-
-            if key == glfw.KEY_A:
-                self.is_a_pressed = not self.is_a_pressed
-            
-            if key == glfw.KEY_T:
-                self.is_t_pressed = not self.is_t_pressed
-
             if key == glfw.KEY_1:
-                self.light = 1
+                self.camara = 1
         
             if key == glfw.KEY_2:
-                self.light = 2
+                self.camara = 2
 
             if key == glfw.KEY_3:
+                self.camara = 3
+
+            if key == glfw.KEY_Z:
+                self.light = 1
+        
+            if key == glfw.KEY_X:
+                self.light = 2
+
+            if key == glfw.KEY_C:
                 self.light = 3
 
-            if key == glfw.KEY_4:
+            if key == glfw.KEY_V:
                 self.light = 4
             
             if key == glfw.KEY_UP:
                 self.reset = True
                 self.empezar = True
+
+            if key == glfw.KEY_W:
+                self.w = True
+
+            if key == glfw.KEY_A:
+                self.a = True
+
+            if key == glfw.KEY_S:
+                self.s = True
+
+            if key == glfw.KEY_D:
+                self.d = True
+        
+        elif action == glfw.RELEASE:
+            if key == glfw.KEY_W:
+                self.w = False
+
+            if key == glfw.KEY_A:
+                self.a = False
+
+            if key == glfw.KEY_S:
+                self.s = False
+
+            if key == glfw.KEY_D:
+                self.d = False
 
     # Función que obtiene las coordenadas de la posición del mouse y las traduce en coordenadas de openGL
     def cursor_pos_callback(self, window, x, y):
@@ -229,22 +322,28 @@ class Controller:
                 self.rightClickOn = False
 
     #Funcion que recibe el input para manejar la camara y el tipo de esta, incluye ek movimiento del personaje
-    def update_camera(self, delta):
+    def update_camera(self, delta, mesa):
+        dx, dy = mesa.tamaño[0]/2, mesa.tamaño[1]/2
         # Selecciona la cámara a utilizar
-        if self.is_a_pressed and self.camara != 1:
-            x = self.camera.at[0]
-            y = self.camera.at[1]
-            z = self.camera.at[2]-0.1
+        if self.camara==1 and not self.camara1:
+            x = 0
+            y = -dy-1
+            z = 1.2
             self.camera = FirstCamera(x, y, z)
-            self.camara = 1
-        elif not self.is_a_pressed and self.camara != 3:
+            self.camara1 = True
+            self.camara3 = False
+        elif self.camara==3 and not self.camara3:
             x = self.camera.eye[0]
             y = self.camera.eye[1]
             z = self.camera.eye[2]
             self.camera = ThirdCamera(x, y, z)
-            self.camara = 3
+            self.camara1 = False
+            self.camara3 = True
 
-        direction = self.camera.at - self.camera.eye
+        direction = self.camera.at[0:2] - self.camera.eye[0:2]
+        direction = np.array([direction[0], direction[1], 0])
+        direction /= np.linalg.norm(direction)
+        rotatedir = np.array([-direction[1], direction[0], 0])
         theta = -self.mousePos[0] * 2 * np.pi - np.pi/2
 
         mouseY = self.mousePos[1]
@@ -258,24 +357,20 @@ class Controller:
                 self.camera.at -= direction * delta
 
         elif self.camara == 1:
-            if self.leftClickOn:
+            if self.w:
                 self.camera.eye += direction * delta
 
-            if self.rightClickOn:
+            if self.s:
                 self.camera.eye -= direction * delta
+
+            if self.a:
+                self.camera.eye += rotatedir * delta
+
+            if self.d:
+                self.camera.eye -= rotatedir * delta
             self.camera.set_phi(phi)
 
         self.camera.set_theta(theta)
-
-    def collision(self, cargas):
-        # Funcion para detectar las colisiones con las cargas
-
-        # Se recorren las cargas 
-        for carga in cargas:
-            # si la distancia a la carga es menor que la suma de los radios ha ocurrido en la colision
-            if (self.radio+carga.radio)**2 > ((self.pos[0]- carga.pos[0])**2 + (self.pos[1]-carga.pos[1])**2):
-                self.reset = True
-                return
 
 # Clase iluminación, crea los parámetros y las funciones para inicializar los shaders con normales.
 class Iluminacion:
