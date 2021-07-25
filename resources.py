@@ -19,24 +19,45 @@ from numpy import random as rd
 # CLASE CON LOS ELEMENTOS DE LA MESA
 class Bola:
     """ Las bolas de billar, la clase permite manejar la posición y velocidad de cada bola, calcular sus colisiones y físicas."""
-    def __init__(self, pipeline, position):
+    def __init__(self, pipeline, position, shadowpipeline):
         # Figura:
         self.model = None
         self.diam = 0.051 # Diametro de las bolas (Para todas las bolas de número, la bola blanca mide 0.048)
         self.pipeline = pipeline # Pipeline de la bola
+        self.shadowpipeline = shadowpipeline
         self.position = position
         self.velocity = np.array([0., 0., 0.]) # Las pelotas siempre comienzan con velocidad 0
+        self.sombra = sh.createShadowQuad(shadowpipeline)
 
     def setModel(self, model):
         # Define la gpushape de la bola
         self.model = model
 
-    def move(self, pos, vel):
+    def move(self, ROCE):
         # Se modifican la velocidad y posición
-        self.position = pos
-        self.velocity = vel
+        def roce(t, y0):
+            # calcula posicion y velocidad con respecto al roce
+            R = ROCE*np.array([1., 1.])
+            ax = 0
+            ay = 0
+            if np.abs(y0[1][0])<0.01:
+                y0[1][0] = 0
+            else:
+                ax = y0[1][0]/R[0]
 
-    def interactionTable(self, mesa):
+            if np.abs(y0[1][1])<0.01:
+                y0[1][1] = 0
+            else:
+                ay = y0[1][1]/R[1]
+            return np.array([y0[1], np.array([-ax, -ay]) ])
+
+        y0 = np.array([self.position[0:2], self.velocity[0:2]])
+        yfinal = ode.euler(0.01, 0, y0, roce)
+        self.position[0:2] = yfinal[0]
+        self.velocity[0:2] = yfinal[1]
+            
+
+    def interactionTable(self, mesa, COEF):
         """ Se le entrega la mesa donde está jugando, para detectar colisiones con la mesa y la gravedad ligada a esta, utilizando la aproximación por euler"""
         assert isinstance(mesa, MESA)
         tamaño = mesa.tamaño
@@ -76,19 +97,40 @@ class Bola:
         elif posbajo <= altura:
             self.velocity[2] = 0
 
+        #Colisiones con los bordes de madera, que tienen la mitad del coeficiente de restitución
+        if self.position[0] +self.diam/2 > dx:
+            self.velocity[0] = -abs(self.velocity[0])
+
+        if self.position[0] < dx + self.diam/2:
+            self.velocity[0] = abs(self.velocity[0])
+
+        if self.position[1] > dy - self.diam/2:
+            self.velocity[1] = -abs(self.velocity[1])
+
+        if self.position[1] < -dy + self.diam/2:
+            self.velocity[1] = abs(self.velocity[1])
 
 
 
-
-
-    def draw(self):
+    def draw(self, projection, viewMatrix):
         # Dibujar la bola
+        glUseProgram(self.pipeline.shaderProgram)
         glUniformMatrix4fv(glGetUniformLocation(self.pipeline.shaderProgram, "model"), 1, GL_TRUE, tr.matmul([
             tr.translate(self.position[0], self.position[1], self.position[2]),
             tr.uniformScale(self.diam/2)
         ])
         )
         self.pipeline.drawCall(self.model)
+
+        glUseProgram(self.shadowpipeline.shaderProgram)
+        glUniformMatrix4fv(glGetUniformLocation(self.shadowpipeline.shaderProgram, "projection"), 1, GL_TRUE, projection)
+        glUniformMatrix4fv(glGetUniformLocation(self.shadowpipeline.shaderProgram, "view"), 1, GL_TRUE, viewMatrix)
+        glUniformMatrix4fv(glGetUniformLocation(self.shadowpipeline.shaderProgram, "model"), 1, GL_TRUE, tr.matmul([
+            tr.translate(self.position[0], self.position[1], self.position[2]-self.diam/2),
+            tr.uniformScale(self.diam)
+        ])
+        )
+        self.pipeline.drawCall(self.sombra)
 
 class MESA:
     """ La mesa de billar, clase que permite calcular el tamaño de esta, su colision con los bordes, y detectar cuando una bola entre en los bolsillos para considerar el puntaje"""
@@ -108,9 +150,10 @@ class MESA:
 
 class TACO:
     """ Taco que utilizará el jugador para golpear la pelota."""
-    def __init__(self, pipeline, posicion):
+    def __init__(self, pipeline):
         self.pipeline = pipeline
-        self.position = posicion
+        self.position = None
+        self.positionTemp = None
         self.model = sh.createNormalColorCuestrick(pipeline)
         self.phi = 0
         self.theta = 0
@@ -124,11 +167,24 @@ class TACO:
             theta = controller.camera.theta # rotacionZ
             phi = controller.camera.phi #rotacionY
             if controller.rightClickOn:
-                self.phi = phi-np.pi/2
+                self.phi = -phi-np.pi/2
             else:
                 self.phi = -np.pi/2
-            self.theta = theta
-            self.position = np.array([eye[0], eye[1], eye[2]-0.1])
+            self.theta = theta+np.pi
+            rx = 0.2*np.cos(theta)*np.sin(phi)
+            ry = 0.2*np.sin(theta)*np.sin(phi)
+            self.position = np.array([eye[0]-rx, eye[1]-ry, eye[2]-0.1])
+        elif controller.camara3 and controller.rightClickOn:
+            theta = controller.camera.theta # rotacionZ
+            self.phi = np.pi/50
+            self.theta = theta + np.pi
+            rx = 0.3*np.cos(theta)
+            ry = 0.3*np.sin(theta)
+            self.position = np.array([eye[0]+rx, eye[1]+ry, eye[2]-0.2])
+        else:
+            self.theta = 0
+            self.phi = 0
+            self.position = np.array([-0.1, 0.51, 0.87])
 
 
     def draw(self):
@@ -148,7 +204,7 @@ class ThirdCamera:
     def __init__(self, x, y , z):
         self.at = np.array([x, y, z])
         self.theta = -np.pi/2
-        self.eye = np.array([x, y - 0.3, z + 0.3])
+        self.eye = np.array([x, y - 0.6, z + 0.3])
         self.up = np.array([0, 0, 1])
 
     # Determina el ángulo theta
@@ -161,8 +217,8 @@ class ThirdCamera:
 
     # Actualiza la matriz de vista y la retorna
     def update_view(self):
-        self.eye[0] = 0.3 * np.cos(self.theta) + self.at[0]
-        self.eye[1] = 0.3 * np.sin(self.theta) + self.at[1]
+        self.eye[0] = 0.6 * np.cos(self.theta) + self.at[0]
+        self.eye[1] = 0.6 * np.sin(self.theta) + self.at[1]
 
         viewMatrix = tr.lookAt(
             self.eye,
@@ -233,7 +289,7 @@ class Controller:
 
         self.light = 3
 
-        self.selector = 0
+        self.selector = 0%16
 
         self.w = False
         self.s = False
@@ -295,10 +351,10 @@ class Controller:
                 self.light = 4
 
             if key == glfw.KEY_Q:
-                self.selector-=1
+                self.selector = (self.selector-1)%16
             
             if key == glfw.KEY_E:
-                self.selector+=1
+                self.selector = (self.selector+1)%16
             
             if key == glfw.KEY_UP:
                 self.reset = True
@@ -371,7 +427,6 @@ class Controller:
     def update_camera(self, delta, mesa, Bolas):
         dx, dy = mesa.tamaño[0]/2, mesa.tamaño[1]/2
         bolavista = Bolas[self.selector]
-        print(bolavista.position)
         # Selecciona la cámara a utilizar
         if self.camara==1 and not self.camara1:
             x = 0
@@ -420,7 +475,7 @@ class Controller:
                     self.camera.eye -= rotatedir * delta
                 self.camera.set_phi(phi)
 
-            if self.camera == 3:
+            if self.camara == 3:
                 pos = bolavista.position
                 x = pos[0]
                 y = pos[1]
@@ -627,3 +682,5 @@ def readOBJ(filename, color = None):
             index += 3        
 
         return bs.Shape(vertexData, indices)
+
+

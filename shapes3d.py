@@ -45,6 +45,7 @@ texBola12 = os.path.join(assetsDirectory, "bola12.png")
 texBola13 = os.path.join(assetsDirectory, "bola13.png")
 texBola14 = os.path.join(assetsDirectory, "bola14.png")
 texBola15 = os.path.join(assetsDirectory, "bola15.png")
+texSombra = os.path.join(assetsDirectory, "sombra.png")
 
 # Convenience function to ease initialization
 def createGPUShape(pipeline, shape):
@@ -857,3 +858,20 @@ def createNormalColorCuestrick(pipeline):
     return createGPUShape(pipeline, bs.Shape(vertices, indices))
         
 
+def createShadowQuad(pipeline):
+    # Defining locations and texture coordinates for each vertex of the shape    
+    vertices = [
+    #   positions        texture
+        -1, -1, 0,  0, 1,
+         1, -1, 0, 1, 1,
+         1,  1, 0, 1, 0,
+        -1,  1, 0,  0, 0]
+
+    # Defining connections among vertices
+    # We have a triangle every 3 indices specified
+    indices = [
+         0, 1, 2,
+         2, 3, 0]
+
+    shape =  bs.Shape(vertices, indices)
+    return createTextureGPUShape(shape, pipeline, texSombra, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)

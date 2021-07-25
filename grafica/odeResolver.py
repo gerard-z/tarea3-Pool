@@ -44,6 +44,14 @@ def euler(h, tiempo, y0, funcion):
     " Resolución con el método de Euler"
     return y0 + h*funcion(tiempo, y0)
 
+def eulerModificado(h, tiempo, y0, funcion):
+    " Resolucióon con el método de euler modificado"
+    return y0 + h*funcion(tiempo + h/2, y0 + h/2 * funcion(tiempo, y0))
+
+def eulerMejorado(h, tiempo, y0, funcion):
+    " Resolución con el método de euler mejorado"
+    return y0 + h/2 * (funcion(tiempo, y0) + funcion(tiempo + h, y0 + h*funcion(tiempo, y0)))
+
 def RK4(h, tiempo, y0, funcion):
     " Resolución con el método de Runge Kutta 4"
     k1 = funcion(tiempo, y0)

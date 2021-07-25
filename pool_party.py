@@ -13,8 +13,21 @@ import grafica.scene_graph as sg
 import grafica.newLightShaders as nl
 from shapes3d import *
 from resources import *
+import sys
+import json
 
 " Se consideran que los ejes están en metros, por lo tanto las bolas que miden 51mm, tendrán un grosor de 0.051"
+
+thisFilePath = os.path.abspath(__file__)
+thisFolderPath = os.path.dirname(thisFilePath)
+jason = os.path.join(thisFolderPath, "config.json")
+#jason = str(sys.argv[1])
+with open(jason,"r") as config:
+    data = json.load(config)
+
+
+ROCE = data["factor de friccion"]
+COEF = data["coeficiente de restitucion"]
 
 
 velocidad = 1
@@ -30,6 +43,7 @@ if __name__ == "__main__":
     height = 800
     title = "POOL"
 
+    glfw.window_hint(glfw.SAMPLES, 4)
     window = glfw.create_window(width, height, title, None, None)
 
     if not window:
@@ -55,6 +69,7 @@ if __name__ == "__main__":
 
     # Este shader 3D no considera la iluminación de la linterna
     mvpPipeline = es.SimpleModelViewProjectionShaderProgram()
+    texPipeline = es.SimpleTextureModelViewProjectionShaderProgram()
 
     # Este shader es uno en 2D
     pipeline2D = es.SimpleTransformShaderProgram()
@@ -68,7 +83,7 @@ if __name__ == "__main__":
 
     # CREANDO GPU
     mesa = MESA(phongPipeline)
-    taco = TACO(phongPipeline, np.array([-1, 0, 0.9]))
+    taco = TACO(phongPipeline)
 
     bolaShape = createNormalTexSphere(40, 20)
     gpuBola1 = createTextureGPUShape(bolaShape, phongTexPipeline, texBola1, minFilterMode=GL_LINEAR)
@@ -105,38 +120,38 @@ if __name__ == "__main__":
 
     
 
-    bola0 = Bola(phongTexPipeline, np.array([0, 0.47, 0.9]))
+    bola0 = Bola(phongTexPipeline, np.array([0, 0.47, 0.9]), texPipeline)
     bola0.diam = 0.048
     bola0.setModel(gpuBola0)
-    bola1 = Bola(phongTexPipeline, np.array([0.5, 0.204, 0.9]))
+    bola1 = Bola(phongTexPipeline, np.array([0.5, 0.204, 0.9]), texPipeline)
     bola1.setModel(gpuBola1)
-    bola2 = Bola(phongTexPipeline, np.array([0.5, 0.102, 0.9]))
+    bola2 = Bola(phongTexPipeline, np.array([0.5, 0.102, 0.9]), texPipeline)
     bola2.setModel(gpuBola2)
-    bola3 = Bola(phongTexPipeline, np.array([0.5, 0., 0.9]))
+    bola3 = Bola(phongTexPipeline, np.array([0.5, 0., 0.9]), texPipeline)
     bola3.setModel(gpuBola3)
-    bola4 = Bola(phongTexPipeline, np.array([0.5, -0.102, 0.9]))
+    bola4 = Bola(phongTexPipeline, np.array([0.5, -0.102, 0.9]), texPipeline)
     bola4.setModel(gpuBola4)
-    bola5 = Bola(phongTexPipeline, np.array([0.5, -0.204, 0.9]))
+    bola5 = Bola(phongTexPipeline, np.array([0.5, -0.204, 0.9]), texPipeline)
     bola5.setModel(gpuBola5)
-    bola6 = Bola(phongTexPipeline, np.array([ 0.398, 0.153, 0.9]))
+    bola6 = Bola(phongTexPipeline, np.array([ 0.398, 0.153, 0.9]), texPipeline)
     bola6.setModel(gpuBola6)
-    bola7 = Bola(phongTexPipeline, np.array([0.398, 0.051, 0.9]))
+    bola7 = Bola(phongTexPipeline, np.array([0.398, 0.051, 0.9]), texPipeline)
     bola7.setModel(gpuBola7)
-    bola8 = Bola(phongTexPipeline, np.array([0.398, -0.051, 0.9]))
+    bola8 = Bola(phongTexPipeline, np.array([0.398, -0.051, 0.9]), texPipeline)
     bola8.setModel(gpuBola8)
-    bola9 = Bola(phongTexPipeline, np.array([0.398, -0.153, 0.9]))
+    bola9 = Bola(phongTexPipeline, np.array([0.398, -0.153, 0.9]), texPipeline)
     bola9.setModel(gpuBola9)
-    bola10 = Bola(phongTexPipeline, np.array([0.296, 0.101, 0.9]))
+    bola10 = Bola(phongTexPipeline, np.array([0.296, 0.101, 0.9]), texPipeline)
     bola10.setModel(gpuBola10)
-    bola11 = Bola(phongTexPipeline, np.array([0.296, 0., 0.9]))
+    bola11 = Bola(phongTexPipeline, np.array([0.296, 0., 0.9]), texPipeline)
     bola11.setModel(gpuBola11)
-    bola12 = Bola(phongTexPipeline, np.array([0.296, -0.101, 0.9]))
+    bola12 = Bola(phongTexPipeline, np.array([0.296, -0.101, 0.9]), texPipeline)
     bola12.setModel(gpuBola12)
-    bola13 = Bola(phongTexPipeline, np.array([0.194, 0.051, 0.9]))
+    bola13 = Bola(phongTexPipeline, np.array([0.194, 0.051, 0.9]), texPipeline)
     bola13.setModel(gpuBola13)
-    bola14 = Bola(phongTexPipeline, np.array([0.194, -0.051, 0.9]))
+    bola14 = Bola(phongTexPipeline, np.array([0.194, -0.051, 0.9]), texPipeline)
     bola14.setModel(gpuBola14)
-    bola15 = Bola(phongTexPipeline, np.array([0.092, 0., 0.9]))
+    bola15 = Bola(phongTexPipeline, np.array([0.092, 0., 0.9]), texPipeline)
     bola15.setModel(gpuBola15)
 
     Bolas = [bola0, bola1, bola2, bola3, bola4, bola5, bola6, bola7, bola8, bola9, bola10, bola11, bola12, bola13, bola14, bola15]
@@ -145,6 +160,7 @@ if __name__ == "__main__":
     lightPos = np.array([0., 0., 5])
     lightDirection = np.array([0, 0, -1])
 
+    bola1.velocity = np.array([1., 1., 0.])
 
 
     perfMonitor = pm.PerformanceMonitor(glfw.get_time(), 0.5)
@@ -189,7 +205,8 @@ if __name__ == "__main__":
 
         # Físicas
         for bola in Bolas:
-            bola.interactionTable(mesa)
+            bola.interactionTable(mesa, COEF)
+            bola.move(ROCE)
 
         pos = controller.getEyeCamera()
         dir = controller.getAtCamera()
@@ -215,13 +232,31 @@ if __name__ == "__main__":
         projection = tr.perspective(60, float(width) / float(height), 0.1, 100)
 
         # Clearing the screen in both, color and depth
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glEnable(GL_BLEND)
 
         # Filling or not the shapes depending on the controller state
         if (controller.fillPolygon):
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         else:
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+
+        # Shader de iluminación para objetos sin texturas
+        light.updateLight(phongPipeline, lightPos, lightDirection, lightPos)
+        # Enviar matrices de transformaciones
+        glUniformMatrix4fv(glGetUniformLocation(phongPipeline.shaderProgram, "projection"), 1, GL_TRUE, projection)
+        glUniformMatrix4fv(glGetUniformLocation(phongPipeline.shaderProgram, "view"), 1, GL_TRUE, viewMatrix)
+
+        # Iluminación del material
+        glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ka"), 0.2, 0.2, 0.2)
+        glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Kd"), 0.4, 0.4, 0.4)
+        glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ks"), 0.6, 0.6, 0.6)
+
+        #Draw
+        glUniformMatrix4fv(glGetUniformLocation(phongPipeline.shaderProgram, "model"), 1, GL_TRUE, tr.matmul([tr.translate(0, 0 ,0), tr.uniformScale(1)]))
+        mesa.draw()
+        taco.draw()
         
         # Shader de texturas para dar efecto de movimiento de agua
         light.updateLight(phongTexPipeline, lightPos, lightDirection, controller.getEyeCamera())
@@ -236,26 +271,7 @@ if __name__ == "__main__":
 
         # Drawing
         for bola in Bolas:
-            bola.draw()
-        
-
-        # Shader de iluminación para objetos sin texturas
-        light.updateLight(phongPipeline, lightPos, lightDirection, lightPos)
-        # Enviar matrices de transformaciones
-        glUniformMatrix4fv(glGetUniformLocation(phongPipeline.shaderProgram, "projection"), 1, GL_TRUE, projection)
-        glUniformMatrix4fv(glGetUniformLocation(phongPipeline.shaderProgram, "view"), 1, GL_TRUE, viewMatrix)
-
-        # Iluminación del material
-        glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ka"), 0.2, 0.2, 0.2)
-        glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Kd"), 0.5, 0.5, 0.5)
-        glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ks"), 1.0, 1.0, 1.0)
-
-        #Draw
-        glUniformMatrix4fv(glGetUniformLocation(phongPipeline.shaderProgram, "model"), 1, GL_TRUE, tr.matmul([tr.translate(0, 0 ,0), tr.uniformScale(1)]))
-        mesa.draw()
-        taco.draw()
-
-
+            bola.draw(projection, viewMatrix)
 
         # Shader de iluminación para objetos con texturas para color y normal
         light.updateLight(phongOBJPipeline, lightPos, lightDirection, lightPos)
