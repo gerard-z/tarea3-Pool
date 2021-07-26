@@ -611,6 +611,33 @@ class Controller:
                         v = np.array([2., 0., 0., 1.])
                         v = np.matmul(tr.rotationZ(theta),v)
                         bolavista.velocity = v[0:3]
+        if self.camara == 1 and self.disponible:
+            if self.rightClickOn:
+                pos = self.camera.eye
+                theta = self.camera.theta + np.pi
+                phi = -self.camera.phi-np.pi/2
+                puntoSelector = np.array([0.6, 0., 0., 1.])
+                rx = 0.2*np.cos(theta)*np.sin(phi)
+                ry = 0.2*np.sin(theta)*np.sin(phi)
+                model = tr.matmul([tr.translate(pos[0]-rx, pos[1]-ry, pos[2]-0.2), tr.rotationZ(theta), tr.rotationY(phi)])
+                puntoSelector = np.matmul(model, puntoSelector)[0:3]
+                n = len(Bolas)
+                print(puntoSelector)
+                for i in range(n):
+                    diferencia = puntoSelector-Bolas[i].position
+                    distancia = np.linalg.norm(diferencia)
+                    if distancia<=Bolas[i].diam/2:
+                        print(i)
+                        self.selector = i
+                diferencia = puntoSelector-Bolas[self.selector].position
+                distancia = np.linalg.norm(diferencia)
+                if distancia<=Bolas[self.selector].diam/2 and self.leftClickOn:
+                    self.disponible = False
+                    v = np.array([2., 0., 0., 1.])
+                    v = np.matmul(tr.rotationZ(theta-np.pi),v)
+                    Bolas[self.selector].velocity = v[0:3]
+                    
+
 
     def enMovimiento(self, Bolas):
         """ Si las bolas están en movimiento, bloquear golpear hasta que se queden quietas"""
@@ -849,7 +876,7 @@ def colisionEsferas(bola1, bola2):
         return distancia<distanciaColision
     return False
 
-def GolpeEsferas(bola1, bola2, COEF):
+def GolpeEsferas(bola1, bola2, COEF): # Decidú que el golpe entre las pelotas sea elástico, esto debido a que la fuerza de roce y los choques inelásticos con los amortiguadores y borde es suficiente para detener el movimiento
     """ Habiendo un impacto entre las bolas de billar, se calcula sus nuevas velocidades considerando el coeficiente de restitución"""
     assert isinstance(bola1, Bola)
     assert isinstance(bola2, Bola)
