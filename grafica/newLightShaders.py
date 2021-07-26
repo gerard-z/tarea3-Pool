@@ -1605,8 +1605,15 @@ class SimplePhongTextureSpotlightShaderProgram:
                 vec3 dir = normalize(-lightDirection);
                 float spotLight = pow(max(dot(dir, lightDir), 0.0), concentration);
                 vec3 result = ambient + spotLight/attenuation * (diffuse + specular);
-                    
-                result = result * fragOriginalColor.rgb;
+
+                //Reflejo para el negro
+                if(fragOriginalColor.rgb == vec3(0, 0, 0)){
+                    result = result * fragOriginalColor.rgb + specular + diffuse*0.1;
+                }else{
+                    result = result * fragOriginalColor.rgb;
+                }
+                
+                
                 fragColor = vec4(result, 1.0);
             }
             """

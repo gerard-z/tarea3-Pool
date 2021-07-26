@@ -29,13 +29,15 @@ class Bola:
         self.borrar = False
         self.fuera = False
         self.velocity = np.array([0., 0., 0.]) # Las pelotas siempre comienzan con velocidad 0
+        self.velocidadAngular = 0
+        self.rotacion = tr.identity()
         self.sombra = sh.createShadowQuad(shadowpipeline)
 
     def setModel(self, model):
         # Define la gpushape de la bola
         self.model = model
 
-    def move(self, ROCE):
+    def move(self, ROCE, delta):
         "Movimiento con roce de las bolas"
         # Se modifican la velocidad y posición
         def roce(t, y0):
@@ -63,6 +65,12 @@ class Bola:
         yfinal = ode.eulerMejorado(0.01, 0, y0, roce)
         self.position[0:2] = yfinal[0]
         self.velocity[0:2] = yfinal[1]
+        self.velocidadAngular = np.linalg.norm(self.velocity[0:2])
+        if self.velocidadAngular != 0:
+            eje = np.array([-self.velocity[1], self.velocity[0], 0])
+            eje /= np.linalg.norm(eje)
+            rotar = tr.rotationA(self.velocidadAngular*delta*20, eje)
+            self.rotacion = np.matmul(rotar, self.rotacion)
 
         if self.fuera and self.position[2]<0.9:
             self.fuera = False
@@ -98,12 +106,12 @@ class Bola:
         self.velocity[2] = yfinal[1]
         
         pos = self.position
-        sobrebolsillodx0 = sobreBolsillo(dx-diam, dy-diam, pos, diam)
-        sobrebolsillodx1 = sobreBolsillo(dx-diam, -dy+diam, pos, diam)
-        sobrebolsillo0 = sobreBolsillo(0, dy-diam, pos, diam) 
-        sobrebolsillo1 = sobreBolsillo(0, -dy+diam, pos, diam)
-        sobrebolsillox0 = sobreBolsillo(-dx+diam, dy-diam, pos, diam) 
-        sobrebolsillox1 = sobreBolsillo(-dx+diam, -dy+diam, pos, diam)
+        sobrebolsillodx0 = sobreBolsillo(dx-diam, dy-diam, pos, diam/2)
+        sobrebolsillodx1 = sobreBolsillo(dx-diam, -dy+diam, pos, diam/2)
+        sobrebolsillo0 = sobreBolsillo(0, dy-diam, pos, diam/2) 
+        sobrebolsillo1 = sobreBolsillo(0, -dy+diam, pos, diam/2)
+        sobrebolsillox0 = sobreBolsillo(-dx+diam, dy-diam, pos, diam/2) 
+        sobrebolsillox1 = sobreBolsillo(-dx+diam, -dy+diam, pos, diam/2)
 
         posbajo = self.position[2]-self.diam/1.9
 
@@ -116,6 +124,7 @@ class Bola:
             if self.velocity[0] == 0 and self.velocity[1] == 0 and posbajo<=0.8 and self.velocity[2]<=0:
                 self.borrar = True
         elif posbajo <= altura:
+            self.position[2]=altura+self.diam/2
             if abs(self.velocity[2])>0.1: 
                 self.velocity[2] = abs(self.velocity[2])*COEF/2
             else:
@@ -134,16 +143,15 @@ class Bola:
             if distancia+self.diam/2>radio and not np.dot(v, normal)<0 and self.position[2]<altura+self.diam/2:
                 vn = np.dot(v, normal)*normal*COEF/4
                 vt = np.dot(v, tangente)*tangente
-                print(v, vn, vt)
 
                 self.velocity = -vn + vt
         
-        if sobrebolsillodx0: colisionBolsillos(dx-diam, dy-diam, pos, diam, COEF)
-        elif sobrebolsillodx1: colisionBolsillos(dx-diam, -dy+diam, pos, diam, COEF)
-        elif sobrebolsillo0: colisionBolsillos(0, dy-diam, pos, diam, COEF)
-        elif sobrebolsillo1: colisionBolsillos(0, -dy+diam, pos, diam, COEF)
-        elif sobrebolsillox0: colisionBolsillos(-dx+diam, dy-diam, pos, diam, COEF)
-        elif sobrebolsillox1: colisionBolsillos(-dx+diam, -dy+diam, pos, diam, COEF)
+        if sobrebolsillodx0: colisionBolsillos(dx-diam, dy-diam, pos, diam/2, COEF)
+        elif sobrebolsillodx1: colisionBolsillos(dx-diam, -dy+diam, pos, diam/2, COEF)
+        elif sobrebolsillo0: colisionBolsillos(0, dy-diam, pos, diam/2, COEF)
+        elif sobrebolsillo1: colisionBolsillos(0, -dy+diam, pos, diam/2, COEF)
+        elif sobrebolsillox0: colisionBolsillos(-dx+diam, dy-diam, pos, diam/2, COEF)
+        elif sobrebolsillox1: colisionBolsillos(-dx+diam, -dy+diam, pos, diam/2, COEF)
 
 
         #Colisiones con los bordes de madera, que tienen la mitad del coeficiente de restitución (Utiliza colisión esfera/plano)
@@ -275,6 +283,7 @@ class Bola:
         glUseProgram(self.pipeline.shaderProgram)
         glUniformMatrix4fv(glGetUniformLocation(self.pipeline.shaderProgram, "model"), 1, GL_TRUE, tr.matmul([
             tr.translate(self.position[0], self.position[1], self.position[2]),
+            self.rotacion,
             tr.uniformScale(self.diam/2)
         ])
         )
@@ -460,7 +469,7 @@ class Controller:
         self.d = False
 
         self.reset = False
-        self.empezar = False
+        self.cinematica = True
         self.disponible = True
         self.Fuerza = 3
 
@@ -527,9 +536,8 @@ class Controller:
             if key == glfw.KEY_G and self.Fuerza<5:
                 self.Fuerza +=1
             
-            if key == glfw.KEY_UP:
-                self.reset = True
-                self.empezar = True
+            if key == glfw.KEY_T:
+                self.cinematica = not self.cinematica
 
             if key == glfw.KEY_W:
                 self.w = True
@@ -664,8 +672,10 @@ class Controller:
                 if self.rightClickOn:
                     if self.leftClickOn:
                         self.disponible = False
+                        if self.cinematica:
+                            self.camara = 2
                         theta = self.camera.theta + np.pi
-                        v = np.array([0.5*self.Fuerza, 0., 0., 1.])
+                        v = np.array([0.3*self.Fuerza, 0., 0., 1.])
                         v = np.matmul(tr.rotationZ(theta),v)
                         bolavista.velocity = v[0:3]
         if self.camara == 1 and self.disponible:
@@ -682,13 +692,13 @@ class Controller:
                 for i in range(n):
                     diferencia = puntoSelector-Bolas[i].position
                     distancia = np.linalg.norm(diferencia)
-                    if distancia<=Bolas[i].diam/2:
+                    if distancia<=Bolas[i].diam:
                         self.selector = i
                 diferencia = puntoSelector-Bolas[self.selector].position
                 distancia = np.linalg.norm(diferencia)
-                if distancia<=Bolas[self.selector].diam/2 and self.leftClickOn:
+                if distancia<=Bolas[self.selector].diam and self.leftClickOn:
                     self.disponible = False
-                    v = np.array([0.5*self.Fuerza, 0., 0., 1.])
+                    v = np.array([0.3*self.Fuerza, 0., 0., 1.])
                     v = np.matmul(tr.rotationZ(theta-np.pi),v)
                     Bolas[self.selector].velocity = v[0:3]
                     
@@ -704,6 +714,8 @@ class Controller:
                     c += 1
             if c==n:
                 self.disponible = True
+                if self.cinematica and self.camara == 2:
+                    self.camara = 3
 
 
 

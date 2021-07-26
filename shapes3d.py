@@ -892,3 +892,34 @@ def createColorCircle(pipeline, r, g, b, x):
 
     shape = bs.Shape(vertices, indices)
     return createGPUShape(pipeline, shape)
+
+def createCamaraIcon(pipeline):
+    trianguloShape = bs.Shape([0, 0, 0, 0, 0, 0, 0.05, 0.025, 0, 0, 0, 0, 0.05, -0.025, 0, 0, 0, 0], [0, 1, 2])
+    gpuTriangulo = createGPUShape(pipeline, trianguloShape)
+
+    triangulo = sg.SceneGraphNode("triangulo")
+    triangulo.transform = tr.translate(0.875, -0.95, 0)
+    triangulo.childs = [gpuTriangulo]
+
+    circulo = sg.SceneGraphNode("Circulo")
+    circulo.childs = [createColorCircle(pipeline, 0, 0, 0, 0)]
+
+    rectanguloshape = bs.createColorQuad(0, 0, 0)
+    gpuRectangulo = createGPUShape(pipeline, rectanguloshape)
+
+    rectangulo = sg.SceneGraphNode("Rectángulo")
+    rectangulo.transform = tr.matmul([tr.translate(0.85, -0.95, 0), tr.scale(0.1, 0.05, 1)])
+    rectangulo.childs = [gpuRectangulo]
+
+    circulo1 = sg.SceneGraphNode("circulo1")
+    circulo1.transform = tr.translate(0.825, 0.055, 0)
+    circulo1.childs = [circulo]
+
+    circulo2 = sg.SceneGraphNode("circulo2")
+    circulo2.transform = tr.translate(0.875, 0.055, 0)
+    circulo2.childs = [circulo]
+
+    camara = sg.SceneGraphNode("Camara")
+    camara.childs = [rectangulo, circulo1, circulo2, triangulo]
+
+    return camara

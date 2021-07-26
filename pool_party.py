@@ -120,39 +120,40 @@ if __name__ == "__main__":
     gpuCirculo3 = createColorCircle(pipeline2D, 1, 0, 0, -0.85)
     gpuCirculo4 = createColorCircle(pipeline2D, 1, 0, 0, -0.8)
     gpuCirculo5 = createColorCircle(pipeline2D, 1, 0, 0, -0.75)
+    camara = createCamaraIcon(pipeline2D)
 
     bola0 = Bola(phongTexPipeline, np.array([-0.5, 0., 0.86]), texPipeline)
     bola0.diam = 0.048
     bola0.setModel(gpuBola0)
-    bola1 = Bola(phongTexPipeline, np.array([0.5, 0.204, 0.86]), texPipeline)
+    bola1 = Bola(phongTexPipeline, np.array([0.5, 0.102, 0.86]), texPipeline)
     bola1.setModel(gpuBola1)
-    bola2 = Bola(phongTexPipeline, np.array([0.5, 0.102, 0.86]), texPipeline)
+    bola2 = Bola(phongTexPipeline, np.array([0.5, 0.051, 0.86]), texPipeline)
     bola2.setModel(gpuBola2)
     bola3 = Bola(phongTexPipeline, np.array([0.5, 0., 0.86]), texPipeline)
     bola3.setModel(gpuBola3)
-    bola4 = Bola(phongTexPipeline, np.array([0.5, -0.102, 0.86]), texPipeline)
+    bola4 = Bola(phongTexPipeline, np.array([0.5, -0.051, 0.86]), texPipeline)
     bola4.setModel(gpuBola4)
-    bola5 = Bola(phongTexPipeline, np.array([0.5, -0.204, 0.86]), texPipeline)
+    bola5 = Bola(phongTexPipeline, np.array([0.5, -0.102, 0.86]), texPipeline)
     bola5.setModel(gpuBola5)
-    bola6 = Bola(phongTexPipeline, np.array([ 0.398, 0.153, 0.86]), texPipeline)
+    bola6 = Bola(phongTexPipeline, np.array([ 0.449, 0.0765, 0.86]), texPipeline)
     bola6.setModel(gpuBola6)
-    bola7 = Bola(phongTexPipeline, np.array([0.398, 0.051, 0.86]), texPipeline)
+    bola7 = Bola(phongTexPipeline, np.array([0.449, 0.0255, 0.86]), texPipeline)
     bola7.setModel(gpuBola7)
-    bola8 = Bola(phongTexPipeline, np.array([0.398, -0.051, 0.86]), texPipeline)
+    bola8 = Bola(phongTexPipeline, np.array([0.449, -0.0255, 0.86]), texPipeline)
     bola8.setModel(gpuBola8)
-    bola9 = Bola(phongTexPipeline, np.array([0.398, -0.153, 0.86]), texPipeline)
+    bola9 = Bola(phongTexPipeline, np.array([0.449, -0.0765, 0.86]), texPipeline)
     bola9.setModel(gpuBola9)
-    bola10 = Bola(phongTexPipeline, np.array([0.296, 0.101, 0.86]), texPipeline)
+    bola10 = Bola(phongTexPipeline, np.array([0.398, 0.051, 0.86]), texPipeline)
     bola10.setModel(gpuBola10)
-    bola11 = Bola(phongTexPipeline, np.array([0.296, 0., 0.86]), texPipeline)
+    bola11 = Bola(phongTexPipeline, np.array([0.398, 0., 0.86]), texPipeline)
     bola11.setModel(gpuBola11)
-    bola12 = Bola(phongTexPipeline, np.array([0.296, -0.101, 0.86]), texPipeline)
+    bola12 = Bola(phongTexPipeline, np.array([0.398, -0.051, 0.86]), texPipeline)
     bola12.setModel(gpuBola12)
-    bola13 = Bola(phongTexPipeline, np.array([0.194, 0.051, 0.86]), texPipeline)
+    bola13 = Bola(phongTexPipeline, np.array([0.347, 0.0255, 0.86]), texPipeline)
     bola13.setModel(gpuBola13)
-    bola14 = Bola(phongTexPipeline, np.array([0.194, -0.051, 0.86]), texPipeline)
+    bola14 = Bola(phongTexPipeline, np.array([0.347, -0.0255, 0.86]), texPipeline)
     bola14.setModel(gpuBola14)
-    bola15 = Bola(phongTexPipeline, np.array([0.092, 0., 0.86]), texPipeline)
+    bola15 = Bola(phongTexPipeline, np.array([0.296, 0., 0.86]), texPipeline)
     bola15.setModel(gpuBola15)
 
     Bolas = [bola0, bola1, bola2, bola3, bola4, bola5, bola6, bola7, bola8, bola9, bola10, bola11, bola12, bola13, bola14, bola15]
@@ -204,21 +205,24 @@ if __name__ == "__main__":
 
         viewMatrix = camera.update_view()
 
-        #Eliminado GPU
+        #Eliminado del juego
+        i = 0
         for bola in Bolas:
             if bola.borrar:
-                Bolas.remove(bola)
                 controller.eliminados +=1
                 if controller.eliminados == 16:
                     controller.selector = 0
                     controller.camara = 2
                 else:
-                    controller.selector = (controller.selector-1)%(16-controller.eliminados)
+                    if controller.selector >= i:
+                        controller.selector = (controller.selector-1)%(16-controller.eliminados)
+                Bolas.remove(bola)
+            i +=1
 
         # Físicas
         for bola in Bolas:
             bola.interactionTable(mesa, COEF)
-            bola.move(ROCE)
+            bola.move(ROCE, delta)
 
         controller.golpear(Bolas)
         controller.enMovimiento(Bolas)
@@ -279,6 +283,8 @@ if __name__ == "__main__":
                 pipeline2D.drawCall(gpuCirculo4)
             if fuerza>4:
                 pipeline2D.drawCall(gpuCirculo5)
+            if controller.cinematica and controller.camara3:
+                sg.drawSceneGraphNode(camara, pipeline2D, "transform")
 
         # Shader de iluminación para objetos sin texturas
         light.updateLight(phongPipeline, lightPos, lightDirection, lightPos)
@@ -293,8 +299,10 @@ if __name__ == "__main__":
 
         #Draw
         glUniformMatrix4fv(glGetUniformLocation(phongPipeline.shaderProgram, "model"), 1, GL_TRUE, tr.matmul([tr.translate(0, 0 ,0), tr.uniformScale(1)]))
-        mesa.draw()
         taco.draw()
+        glUniform1ui(glGetUniformLocation(phongPipeline.shaderProgram, "shininess"), 70)
+        glUniform1ui(glGetUniformLocation(phongPipeline.shaderProgram, "concentration"), 1)
+        mesa.draw()
         
         # Shader de texturas para dar efecto de movimiento de agua
         light.updateLight(phongTexPipeline, lightPos, lightDirection, controller.getEyeCamera())
