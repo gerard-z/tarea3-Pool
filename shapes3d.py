@@ -863,3 +863,32 @@ def createShadowQuad(pipeline):
 
     shape =  bs.Shape(vertices, indices)
     return createTextureGPUShape(shape, pipeline, texSombra, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+
+
+def createColorCircle(pipeline, r, g, b, x):
+
+    # First vertex at the center, white color
+    vertices = [x, -0.95, 0, r, g, b]
+    indices = []
+
+    N = 30
+    dtheta = 2 * np.pi / N
+
+    for i in range(N):
+        theta = i * dtheta
+
+        vertices += [
+            # vertex coordinates
+                  x + 0.025*np.cos(theta), -0.95 + 0.025*np.sin(theta), 0,
+
+            # color generates varying between 0 and 1
+                  r, g, b]
+
+        # A triangle is created using the center, this and the next vertex
+        indices += [0, i, i+1]
+
+    # The final triangle connects back to the second vertex
+    indices += [0, N, 1]
+
+    shape = bs.Shape(vertices, indices)
+    return createGPUShape(pipeline, shape)

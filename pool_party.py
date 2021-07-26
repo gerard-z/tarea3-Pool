@@ -115,7 +115,11 @@ if __name__ == "__main__":
     gpuBola0 = copy.deepcopy(gpuBola1)
     gpuBola0.texture = es.textureSimpleSetup(texBolaBlanca, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
 
-    
+    gpuCirculo1 = createColorCircle(pipeline2D, 1, 0, 0, -0.95)
+    gpuCirculo2 = createColorCircle(pipeline2D, 1, 0, 0, -0.9)
+    gpuCirculo3 = createColorCircle(pipeline2D, 1, 0, 0, -0.85)
+    gpuCirculo4 = createColorCircle(pipeline2D, 1, 0, 0, -0.8)
+    gpuCirculo5 = createColorCircle(pipeline2D, 1, 0, 0, -0.75)
 
     bola0 = Bola(phongTexPipeline, np.array([-0.5, 0., 0.86]), texPipeline)
     bola0.diam = 0.048
@@ -180,6 +184,11 @@ if __name__ == "__main__":
         # Using GLFW to check for input events
         glfw.poll_events()
 
+        # Juego sin bola
+        if controller.eliminados == 16:
+            controller.camra = 2
+            controller.selector = 0
+
         # ALgunos parámetros de movimiento
         if (glfw.get_key(window, glfw.KEY_LEFT_SHIFT) == glfw.PRESS):
             delta *= 4
@@ -194,6 +203,17 @@ if __name__ == "__main__":
         camera = controller.get_camera()
 
         viewMatrix = camera.update_view()
+
+        #Eliminado GPU
+        for bola in Bolas:
+            if bola.borrar:
+                Bolas.remove(bola)
+                controller.eliminados +=1
+                if controller.eliminados == 16:
+                    controller.selector = 0
+                    controller.camara = 2
+                else:
+                    controller.selector = (controller.selector-1)%(16-controller.eliminados)
 
         # Físicas
         for bola in Bolas:
@@ -244,6 +264,21 @@ if __name__ == "__main__":
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         else:
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+
+        # Shaders para mider la fuerza de lanzamiento
+        if controller.rightClickOn:
+            fuerza = controller.Fuerza
+            glUseProgram(pipeline2D.shaderProgram)
+            glUniformMatrix4fv(glGetUniformLocation(pipeline2D.shaderProgram, "transform"), 1, GL_TRUE, tr.identity())
+            pipeline2D.drawCall(gpuCirculo1)
+            if fuerza>1:
+                pipeline2D.drawCall(gpuCirculo2)
+            if fuerza>2:
+                pipeline2D.drawCall(gpuCirculo3)
+            if fuerza>3:
+                pipeline2D.drawCall(gpuCirculo4)
+            if fuerza>4:
+                pipeline2D.drawCall(gpuCirculo5)
 
         # Shader de iluminación para objetos sin texturas
         light.updateLight(phongPipeline, lightPos, lightDirection, lightPos)
