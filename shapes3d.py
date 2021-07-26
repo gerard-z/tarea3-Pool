@@ -16,18 +16,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 thisFilePath = os.path.abspath(__file__)
 thisFolderPath = os.path.dirname(thisFilePath)
 assetsDirectory = os.path.join(thisFolderPath, "sprites")
-waterPath = os.path.join(assetsDirectory, "water.png")
-displacementPath = os.path.join(assetsDirectory, "displacement.png")
-
-boat1 = os.path.join(assetsDirectory, "boat1.obj")
-boat2 = os.path.join(assetsDirectory, "boat2.obj")
-boat3 = os.path.join(assetsDirectory, "boat3.obj")
-wood1 = os.path.join(assetsDirectory, "wood1.jpg")
-norm1 = os.path.join(assetsDirectory, "wood1_NRM.jpg")
-wood2 = os.path.join(assetsDirectory, "wood2.jpg")
-norm2 = os.path.join(assetsDirectory, "wood2_NRM.jpg")
-wood3 = os.path.join(assetsDirectory, "wood3.jpg")
-norm3 = os.path.join(assetsDirectory, "wood3_NRM.jpg")
 
 texBolaBlanca = os.path.join(assetsDirectory, "bolablanca.png")
 texBola1 = os.path.join(assetsDirectory, "bola1.png")
@@ -45,7 +33,7 @@ texBola12 = os.path.join(assetsDirectory, "bola12.png")
 texBola13 = os.path.join(assetsDirectory, "bola13.png")
 texBola14 = os.path.join(assetsDirectory, "bola14.png")
 texBola15 = os.path.join(assetsDirectory, "bola15.png")
-texSombra = os.path.join(assetsDirectory, "sombra.png")
+texSombra = os.path.join(assetsDirectory, "sombra3.png")
 
 # Convenience function to ease initialization
 def createGPUShape(pipeline, shape):

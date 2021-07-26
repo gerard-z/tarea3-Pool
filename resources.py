@@ -34,21 +34,27 @@ class Bola:
         self.model = model
 
     def move(self, ROCE):
+        "Movimiento con roce de las bolas"
         # Se modifican la velocidad y posición
         def roce(t, y0):
             # calcula posicion y velocidad con respecto al roce
             R = ROCE*np.array([1., 1.])
             ax = 0
             ay = 0
+            Ax = False
+            Ay = False
             if np.abs(y0[1][0])<0.01:
-                y0[1][0] = 0
-            else:
-                ax = y0[1][0]/R[0]
-
+                Ax = True
             if np.abs(y0[1][1])<0.01:
+                Ay = True
+            if Ax and Ay:
+                y0[1][0] = 0
+                ax = y0[1][0]
                 y0[1][1] = 0
-            else:
-                ay = y0[1][1]/R[1]
+                ay = y0[1][1]
+        
+            ax = y0[1][0]/R[0]
+            ay = y0[1][1]/R[1]
             return np.array([y0[1], np.array([-ax, -ay]) ])
 
         y0 = np.array([self.position[0:2], self.velocity[0:2]])
@@ -62,7 +68,7 @@ class Bola:
         assert isinstance(mesa, MESA)
         tamaño = mesa.tamaño
         altura = 0.8
-        diam = mesa.bolsillos
+        diam = mesa.bolsillos # diámetro de los bolsillos
 
         X, Y = tamaño[0], tamaño[1]
         dx, dy = X/2, Y/2
@@ -97,18 +103,125 @@ class Bola:
         elif posbajo <= altura:
             self.velocity[2] = 0
 
-        #Colisiones con los bordes de madera, que tienen la mitad del coeficiente de restitución
-        if self.position[0] +self.diam/2 > dx:
-            self.velocity[0] = -abs(self.velocity[0])
+        #Colisiones con los bordes de madera, que tienen la mitad del coeficiente de restitución (Utiliza colisión esfera/plano)
+        if pos[0] +self.diam/2 > dx and self.velocity[0]>0:
+            self.velocity[0] = -abs(self.velocity[0])*COEF/2
 
-        if self.position[0] < dx + self.diam/2:
-            self.velocity[0] = abs(self.velocity[0])
+        if pos[0] < -dx + self.diam/2 and self.velocity[0]<0:
+            self.velocity[0] = abs(self.velocity[0])*COEF/2
 
-        if self.position[1] > dy - self.diam/2:
-            self.velocity[1] = -abs(self.velocity[1])
+        if pos[1] > dy - self.diam/2 and self.velocity[1]>0:
+            self.velocity[1] = -abs(self.velocity[1])*COEF/2
 
-        if self.position[1] < -dy + self.diam/2:
-            self.velocity[1] = abs(self.velocity[1])
+        if pos[1] < -dy + self.diam/2 and self.velocity[1]<0:
+            self.velocity[1] = abs(self.velocity[1])*COEF/2
+
+        # Colisiones con los amortiguadores (primera aproximación de una caja para las bolas con cajas de amortiguadores y luego se procesa según la forma)
+        radio = diam/2
+        recorte = diam + radio
+        recorte1 = 2*diam + radio
+        sdiam = self.diam
+        
+        def colisionBorde(componente, s):
+            "Primera aproximación por plano, verifica si pasa por el plano para estar dentro de un amortiguador"
+            if s>0:
+                return pos[componente]+sdiam/2>s
+            else:
+                return pos[componente]-sdiam/2<s
+
+        def colisionDiag(componente, s, operador):
+            "Segunda aproximación, verifica si la posicion de la pelota es tal que debe considerar la colision con los bordes diagonales del amortiguador"
+            if operador:
+                return pos[componente]>s
+            else:
+                return pos[componente]<s
+
+        def colisionPrecisa(orientacion, p1, p2):
+            """Determina si colisiona con los bordes diagonales, la orientacion es True si la normal hacia el exterior del amortiguador coincide
+            con la regla de la mano derecha rotando al vector p1-p2. Donde siempre se tendrá que p1 es el punto que está en contacto con el borde de la mesa"""
+            tangente = p1-p2
+            tangente /= np.linalg.norm(tangente)
+            vector = pos[0:2]-p2
+            proyeccion = np.dot(vector, tangente) * tangente
+            punto = p2+proyeccion
+            if np.linalg.norm(pos[0:2]-punto)<sdiam/2: #Existe una colision
+                normal = np.array([-tangente[1], tangente[0]])
+                if not orientacion: normal = -normal
+                v = self.velocity[0:2]
+                if not np.dot(v, normal)>0.0:
+                    vn = np.dot(v, normal) * normal*COEF
+                    vt = np.dot(v, tangente) * tangente
+
+                    self.velocity[0:2] = -vn+vt
+
+        #Amortiguador lateral derecho
+        if colisionBorde(0, dx-recorte):
+            A = colisionDiag(1, dy-recorte1, True)
+            B = colisionDiag(1, -dy+recorte1, False)
+            if A:
+                colisionPrecisa(True, np.array([dx-radio, dy-recorte]), np.array([dx-recorte, dy-recorte1]))
+            elif B:
+                colisionPrecisa(False, np.array([dx-radio, -dy+recorte]), np.array([dx-recorte, -dy+recorte1]))
+            elif self.velocity[0]>0:
+                self.velocity[0] = -abs(self.velocity[0])*COEF
+
+        #Amortiguador lateral izquierdo
+        if colisionBorde(0, -dx+recorte):
+            A = colisionDiag(1, dy-recorte1, True)
+            B = colisionDiag(1, -dy+recorte1, False)
+            if A:
+                colisionPrecisa(True, np.array([-dx+radio, dy-recorte]), np.array([-dx+recorte, dy-recorte1]))
+            elif B:
+                colisionPrecisa(False, np.array([-dx+radio, -dy+recorte]), np.array([-dx+recorte, -dy+recorte1]))
+            elif self.velocity[0]<0:
+                self.velocity[0] = abs(self.velocity[0])*COEF
+            
+        #Amortiguador horizontal superior derecho
+        if colisionBorde(1, dy-recorte):
+            A = colisionDiag(0, dx-recorte1, True)
+            B = colisionDiag(0, diam, False)
+            if B:
+                colisionPrecisa(True, np.array([radio, dy-radio]), np.array([diam, dy-recorte]))
+            elif A:
+                colisionPrecisa(False, np.array([dx-recorte, dy-radio]), np.array([dx-recorte1, dy-recorte]))
+            elif self.velocity[1]>0:
+                self.velocity[1] = -abs(self.velocity[1])*COEF
+            
+        #Amortiguador horizontal superior izquierdo
+        if colisionBorde(1, dy-recorte):
+            A = colisionDiag(0, -diam, True)
+            B = colisionDiag(0, -dx+recorte1, False)
+            if A:
+                colisionPrecisa(False, np.array([-radio, dy-radio]), np.array([-diam, dy-recorte]))
+            elif B:
+                colisionPrecisa(True, np.array([-dx+recorte, dy-radio]), np.array([-dx+recorte1, dy-recorte]))
+            elif self.velocity[1]>0:
+                self.velocity[1] = -abs(self.velocity[1])*COEF
+        
+        #Amortiguador horizontal inferior derecho
+        if colisionBorde(1, -dy+recorte):
+            A = colisionDiag(0, dx-recorte1, True)
+            B = colisionDiag(0, diam, False)
+            if B:
+                colisionPrecisa(False, np.array([radio, -dy+radio]), np.array([diam, -dy+recorte]))
+            elif A:
+                colisionPrecisa(True, np.array([dx-recorte, -dy+radio]), np.array([dx-recorte1, -dy+recorte]))
+            elif self.velocity[1]<0:
+                self.velocity[1] = abs(self.velocity[1])*COEF
+            
+        #Amortiguador horizontal inferior izquierdo
+        if colisionBorde(1, -dy+recorte):
+            A = colisionDiag(0, -diam, True)
+            B = colisionDiag(0, -dx+recorte1, False)
+            if A:
+                colisionPrecisa(True, np.array([-radio, -dy+radio]), np.array([-diam, -dy+recorte]))
+            elif B:
+                colisionPrecisa(False, np.array([-dx+recorte, -dy+radio]), np.array([-dx+recorte1, -dy+recorte]))
+            elif self.velocity[1]<0:
+                self.velocity[1] = abs(self.velocity[1])*COEF
+
+
+
 
 
 
@@ -126,8 +239,8 @@ class Bola:
         glUniformMatrix4fv(glGetUniformLocation(self.shadowpipeline.shaderProgram, "projection"), 1, GL_TRUE, projection)
         glUniformMatrix4fv(glGetUniformLocation(self.shadowpipeline.shaderProgram, "view"), 1, GL_TRUE, viewMatrix)
         glUniformMatrix4fv(glGetUniformLocation(self.shadowpipeline.shaderProgram, "model"), 1, GL_TRUE, tr.matmul([
-            tr.translate(self.position[0], self.position[1], self.position[2]-self.diam/2),
-            tr.uniformScale(self.diam)
+            tr.translate(self.position[0], self.position[1], self.position[2]-self.diam/2+0.001),
+            tr.uniformScale(self.diam/2)
         ])
         )
         self.pipeline.drawCall(self.sombra)
@@ -166,7 +279,7 @@ class TACO:
         if controller.camara1:
             theta = controller.camera.theta # rotacionZ
             phi = controller.camera.phi #rotacionY
-            if controller.rightClickOn:
+            if controller.rightClickOn and controller.disponible:
                 self.phi = -phi-np.pi/2
             else:
                 self.phi = -np.pi/2
@@ -174,7 +287,7 @@ class TACO:
             rx = 0.2*np.cos(theta)*np.sin(phi)
             ry = 0.2*np.sin(theta)*np.sin(phi)
             self.position = np.array([eye[0]-rx, eye[1]-ry, eye[2]-0.1])
-        elif controller.camara3 and controller.rightClickOn:
+        elif controller.camara3 and controller.rightClickOn and controller.disponible:
             theta = controller.camera.theta # rotacionZ
             self.phi = np.pi/50
             self.theta = theta + np.pi
@@ -230,7 +343,7 @@ class ThirdCamera:
 class SecondCamera:
     def __init__(self):
         self.at = np.array([0, 0, -1])
-        self.eye = np.array([0., 0., 3])
+        self.eye = np.array([0., 0., 2.7])
         self.up = np.array([0, 1, 0])
 
 
@@ -298,6 +411,7 @@ class Controller:
 
         self.reset = False
         self.empezar = False
+        self.disponible = True
 
         self.leftClickOn = False
         self.rightClickOn = False
@@ -483,17 +597,45 @@ class Controller:
                 self.camera.updateAt(x, y, z)
 
             self.camera.set_theta(theta)
+    
+    def golpear(self, Bolas):
+        """ Función que permite indicar que se va a golpear una pelota"""
+        if self.camara == 3:
+            bolavista = Bolas[self.selector]
+            assert isinstance(bolavista, Bola)
+            if self.disponible:
+                if self.rightClickOn:
+                    if self.leftClickOn:
+                        self.disponible = False
+                        theta = self.camera.theta + np.pi
+                        v = np.array([2., 0., 0., 1.])
+                        v = np.matmul(tr.rotationZ(theta),v)
+                        bolavista.velocity = v[0:3]
+
+    def enMovimiento(self, Bolas):
+        """ Si las bolas están en movimiento, bloquear golpear hasta que se queden quietas"""
+        if not self.disponible:
+            c=0
+            n = len(Bolas)
+            for bola in Bolas:
+                if np.linalg.norm(bola.velocity) == 0:
+                    c += 1
+            if c==n:
+                self.disponible = True
+
+
+
 
 # Clase iluminación, crea los parámetros y las funciones para inicializar los shaders con normales.
 class Iluminacion:
     def __init__(self):
         # Características de la luz por defecto
-        self.LightPower = 0.6
-        self.lightConcentration =20
-        self.lightShininess = 1
-        self.constantAttenuation = 0.01
-        self.linearAttenuation = 0.03
-        self.quadraticAttenuation = 0.04
+        self.LightPower = None
+        self.lightConcentration = None
+        self.lightShininess = None
+        self.constantAttenuation = None
+        self.linearAttenuation = None
+        self.quadraticAttenuation = None
         self.pipeline = None
 
     # fija los nuevos datos para la luz
@@ -684,3 +826,50 @@ def readOBJ(filename, color = None):
         return bs.Shape(vertexData, indices)
 
 
+def colisionEsferas(bola1, bola2):
+    """ Determina si las bolas están chocando entre sí, primero con una aproximación por cajas y luego entre circulos, en el plano 2D"""
+    assert isinstance(bola1, Bola)
+    assert isinstance(bola2, Bola)
+    pos1 = bola1.position
+    pos2 = bola2.position
+    radio1 = bola1.diam/2
+    radio2 = bola2.diam/2
+
+    ColisionX = False
+    ColisionY = False
+
+    #Colision por cajas
+    if pos1[0]-radio1<pos2[0]+radio2 and pos1[0]+radio1>pos2[0]-radio2: ColisionX = True
+    if pos1[1]-radio1<pos2[1]+radio2 and pos1[1]+radio1>pos2[1]-radio2: ColisionY = True
+
+    # Colision exacta
+    if ColisionX and ColisionY:
+        distancia = np.linalg.norm(pos2-pos1)
+        distanciaColision = radio1+ radio2
+        return distancia<distanciaColision
+    return False
+
+def GolpeEsferas(bola1, bola2, COEF):
+    """ Habiendo un impacto entre las bolas de billar, se calcula sus nuevas velocidades considerando el coeficiente de restitución"""
+    assert isinstance(bola1, Bola)
+    assert isinstance(bola2, Bola)
+    pos1 = bola1.position[0:2]
+    pos2 = bola2.position[0:2]
+
+    normal = pos2- pos1
+    normal /= np.linalg.norm(normal)
+
+    v1 = bola1.velocity[0:2]
+    v2 = bola2.velocity[0:2]
+
+    if not (np.dot(v1,normal)<0 and np.dot(v2, normal)>0):
+        tangente = np.array([-normal[1], normal[0]])
+
+        v1n = np.dot(v1, normal) * normal
+        v1t = np.dot(v1, tangente) * tangente
+
+        v2n = np.dot(v2, normal) * normal
+        v2t = np.dot(v2, tangente) * tangente
+
+        bola1.velocity[0:2] = v2n + v1t
+        bola2.velocity[0:2] = v1n + v2t
