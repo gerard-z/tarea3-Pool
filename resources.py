@@ -31,7 +31,7 @@ class Bola:
         self.velocity = np.array([0., 0., 0.]) # Las pelotas siempre comienzan con velocidad 0
         self.velocidadAngular = 0
         self.rotacion = tr.identity()
-        self.sombra = sh.createShadowQuad(shadowpipeline)
+        self.sombra = sh.createShadowQuad(shadowpipeline, sh.texSombra)
 
     def setModel(self, model):
         # Define la gpushape de la bola
@@ -451,6 +451,7 @@ class Controller:
         self.fillPolygon = True
         self.width = width
         self.height = height
+        self.mapaLuz = False
 
         self.camera = SecondCamera()
         self.camara = 2
@@ -538,6 +539,9 @@ class Controller:
             
             if key == glfw.KEY_T:
                 self.cinematica = not self.cinematica
+
+            if key == glfw.KEY_Y:
+                self.mapaLuz = not self.mapaLuz
 
             if key == glfw.KEY_W:
                 self.w = True

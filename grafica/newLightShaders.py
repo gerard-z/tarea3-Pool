@@ -525,7 +525,7 @@ class MultipleTexturePhongShaderProgram:
 ####### Shaders para una luz spotlight (Linterna)
 
 
-class SimplePhongSpotlightShaderProgram:
+class SimplePhongSpotMultilightShaderProgram:
 
     def __init__(self):
         vertex_shader = """
@@ -1465,6 +1465,7 @@ class SimplePhongSpotlightShaderProgram:
             uniform float constantAttenuation;
             uniform float linearAttenuation;
             uniform float quadraticAttenuation;
+            uniform bool mapa;
             void main()
             {
                 // ambient
@@ -1492,8 +1493,19 @@ class SimplePhongSpotlightShaderProgram:
                 vec3 dir = normalize(-lightDirection);
                 float spotLight = pow(max(dot(dir, lightDir), 0.0), concentration);
                 vec3 result = ambient + (spotLight * ((diffuse + specular) / attenuation));
-                    
-                result = result * fragOriginalColor;
+
+                if(!mapa){    
+                    result = result * fragOriginalColor;
+                }else{
+                    float distancia = (distToLight-3.98)*1.5;
+                    float amarillo = 0;
+                    if(distancia>0.5){    
+                        amarillo = (1-distancia)*2;
+                    }else{
+                        amarillo = distancia*2;
+                    }
+                    result = vec3(1-distancia*2, amarillo, distancia*2-1);
+                    }
                 fragColor = vec4(result, 1.0);
             }
             """
@@ -1576,6 +1588,8 @@ class SimplePhongTextureSpotlightShaderProgram:
             uniform float constantAttenuation;
             uniform float linearAttenuation;
             uniform float quadraticAttenuation;
+            uniform bool mapa;
+
             uniform sampler2D samplerTex;
             void main()
             {     
@@ -1606,11 +1620,30 @@ class SimplePhongTextureSpotlightShaderProgram:
                 float spotLight = pow(max(dot(dir, lightDir), 0.0), concentration);
                 vec3 result = ambient + spotLight/attenuation * (diffuse + specular);
 
+                //Eliminación de specular bajo sombra
+                if(fragPosition.z<0.3 && abs(fragPosition.x)<1.3 && abs(fragPosition.y)<0.7){
+                    result = ambient + spotLight/attenuation * diffuse;
+                }
+
                 //Reflejo para el negro
                 if(fragOriginalColor.rgb == vec3(0, 0, 0)){
                     result = result * fragOriginalColor.rgb + specular + diffuse*0.1;
                 }else{
                     result = result * fragOriginalColor.rgb;
+                }
+
+                if(mapa){
+                    float distancia = (distToLight-3.98)*1.5;
+                    float amarillo = 0;
+                    if(distancia>0.5){    
+                        amarillo = (1-distancia)*2;
+                    }else{
+                        amarillo = distancia*2;
+                    }
+                    result = vec3(1-distancia*2, amarillo, distancia*2-1);
+                    if(fragPosition.z>4.5){
+                        result = vec3(0, 0, 1);
+                    }
                 }
                 
                 

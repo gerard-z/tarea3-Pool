@@ -365,7 +365,7 @@ def createColorNormalsCube(r, g, b):
     return Shape(vertices, indices)
 
 
-def createTextureNormalsCube(image_filename):
+def createTextureNormalsCube():
 
     # Defining locations,texture coordinates and normals for each vertex of the shape  
     vertices = [
@@ -413,4 +413,24 @@ def createTextureNormalsCube(image_filename):
          19,18,17,17,16,19, # Y+
          20,21,22,22,23,20] # Y-
 
-    return Shape(vertices, indices, image_filename)
+    return Shape(vertices, indices)
+
+def createPiso():
+    vertices = [
+    #   positions            tex coords   normals
+        -5, -5,  0,         0, 10,        0,0,1,
+         5, -5,  0,         10, 10,        0,0,1,
+         5,  5,  0,         10, 0,        0,0,1,
+        -5,  5,  0,         0, 0,        0,0,1]
+    indices = [0, 1, 2, 2, 3, 0]
+    return Shape(vertices, indices)
+
+def createTecho():
+    vertices = [
+    #   positions            tex coords   normals
+        -5, -5,  5,         0, 10,        0,0,-1,
+         5, -5,  5,         10, 10,        0,0,-1,
+         5,  5,  5,         10, 0,        0,0,-1,
+        -5,  5,  5,         0, 0,        0,0,-1]
+    indices = [0, 1, 2, 2, 3, 0]
+    return Shape(vertices, indices)

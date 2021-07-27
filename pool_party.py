@@ -72,7 +72,7 @@ if __name__ == "__main__":
     pipeline2D = es.SimpleTransformShaderProgram()
 
     # Setting up the clear screen color
-    glClearColor(0.65, 0.65, 0.65, 1.0)
+    glClearColor(0.05, 0.05, 0.05, 1.0)
 
     # As we work in 3D, we need to check which part is in front,
     # and which one is at the back
@@ -158,6 +158,12 @@ if __name__ == "__main__":
 
     Bolas = [bola0, bola1, bola2, bola3, bola4, bola5, bola6, bola7, bola8, bola9, bola10, bola11, bola12, bola13, bola14, bola15]
 
+    
+    gpuPiso = createTextureGPUShape(bs.createPiso(), phongTexPipeline, texPiso, GL_REPEAT, GL_REPEAT)
+    gpuPisoSombra = createShadowQuad(texPipeline, texSombraPiso)
+
+    gpuTecho = createTextureGPUShape(bs.createTecho(), phongTexPipeline, texTecho, GL_REPEAT, GL_REPEAT)
+
     # iluminación
     lightPos = np.array([0., 0., 5])
     lightDirection = np.array([0, 0, -1])
@@ -189,18 +195,16 @@ if __name__ == "__main__":
         if controller.eliminados == 16:
             controller.camra = 2
             controller.selector = 0
+        
+        Delta = delta
 
         # ALgunos parámetros de movimiento
         if (glfw.get_key(window, glfw.KEY_LEFT_SHIFT) == glfw.PRESS):
-            delta *= 4
+            Delta *= 4
         if (glfw.get_key(window, glfw.KEY_LEFT_CONTROL) == glfw.PRESS):
-            delta /= 4
-        if (glfw.get_key(window, glfw.KEY_LEFT) == glfw.PRESS) and phi<=np.pi*0.3:
-            phi += delta
-        if (glfw.get_key(window, glfw.KEY_RIGHT) == glfw.PRESS) and phi>=-np.pi*0.2:
-            phi -= delta
+            Delta /= 4
         # Definimos la cámara de la aplicación
-        controller.update_camera(delta, mesa, Bolas)
+        controller.update_camera(Delta, mesa, Bolas)
         camera = controller.get_camera()
 
         viewMatrix = camera.update_view()
@@ -296,6 +300,7 @@ if __name__ == "__main__":
         glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ka"), 0.2, 0.2, 0.2)
         glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Kd"), 0.4, 0.4, 0.4)
         glUniform3f(glGetUniformLocation(phongPipeline.shaderProgram, "Ks"), 0.6, 0.6, 0.6)
+        glUniform1ui(glGetUniformLocation(phongPipeline.shaderProgram, "mapa"), controller.mapaLuz)
 
         #Draw
         glUniformMatrix4fv(glGetUniformLocation(phongPipeline.shaderProgram, "model"), 1, GL_TRUE, tr.matmul([tr.translate(0, 0 ,0), tr.uniformScale(1)]))
@@ -314,10 +319,15 @@ if __name__ == "__main__":
         glUniform3f(glGetUniformLocation(phongTexPipeline.shaderProgram, "Ka"), 0.2, 0.2, 0.2)
         glUniform3f(glGetUniformLocation(phongTexPipeline.shaderProgram, "Kd"), 0.5, 0.5, 0.5)
         glUniform3f(glGetUniformLocation(phongTexPipeline.shaderProgram, "Ks"), 1.0, 1.0, 1.0)
+        glUniform1ui(glGetUniformLocation(phongTexPipeline.shaderProgram, "mapa"), controller.mapaLuz)
 
         # Drawing
+        glUniformMatrix4fv(glGetUniformLocation(phongTexPipeline.shaderProgram, "model"), 1, GL_TRUE, tr.identity())
+        phongTexPipeline.drawCall(gpuPiso)
+        phongTexPipeline.drawCall(gpuTecho)
         for bola in Bolas:
             bola.draw(projection, viewMatrix)
+        
 
         # Shader de iluminación para objetos con texturas para color y normal
         light.updateLight(phongOBJPipeline, lightPos, lightDirection, lightPos)
@@ -329,6 +339,13 @@ if __name__ == "__main__":
         glUniform3f(glGetUniformLocation(phongOBJPipeline.shaderProgram, "Ka"), 0.2, 0.2, 0.2)
         glUniform3f(glGetUniformLocation(phongOBJPipeline.shaderProgram, "Kd"), 0.5, 0.5, 0.5)
         glUniform3f(glGetUniformLocation(phongOBJPipeline.shaderProgram, "Ks"), 1.0, 1.0, 1.0)
+
+        #Shader 2d
+        glUseProgram(texPipeline.shaderProgram)
+        glUniformMatrix4fv(glGetUniformLocation(texPipeline.shaderProgram, "projection"), 1, GL_TRUE, projection)
+        glUniformMatrix4fv(glGetUniformLocation(texPipeline.shaderProgram, "view"), 1, GL_TRUE, viewMatrix)
+        glUniformMatrix4fv(glGetUniformLocation(texPipeline.shaderProgram, "model"), 1, GL_TRUE, tr.matmul([tr.translate(0, 0, 0.01),tr.scale(1.3,0.7,0)]))
+        texPipeline.drawCall(gpuPisoSombra)
         
         
         # Once the drawing is rendered, buffers are swap so an uncomplete drawing is never seen.

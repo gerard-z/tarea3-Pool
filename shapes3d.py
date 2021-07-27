@@ -35,6 +35,10 @@ texBola14 = os.path.join(assetsDirectory, "bola14.png")
 texBola15 = os.path.join(assetsDirectory, "bola15.png")
 texSombra = os.path.join(assetsDirectory, "sombra3.png")
 
+texPiso = os.path.join(assetsDirectory, "madera.png")
+texSombraPiso = os.path.join(assetsDirectory, "sombra.png")
+texTecho = os.path.join(assetsDirectory, "techo.png")
+
 # Convenience function to ease initialization
 def createGPUShape(pipeline, shape):
     gpuShape = es.GPUShape().initBuffers()
@@ -846,7 +850,7 @@ def createNormalColorCuestrick(pipeline):
     return createGPUShape(pipeline, bs.Shape(vertices, indices))
         
 
-def createShadowQuad(pipeline):
+def createShadowQuad(pipeline, textura):
     # Defining locations and texture coordinates for each vertex of the shape    
     vertices = [
     #   positions        texture
@@ -862,7 +866,7 @@ def createShadowQuad(pipeline):
          2, 3, 0]
 
     shape =  bs.Shape(vertices, indices)
-    return createTextureGPUShape(shape, pipeline, texSombra, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+    return createTextureGPUShape(shape, pipeline, textura, GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
 
 
 def createColorCircle(pipeline, r, g, b, x):
