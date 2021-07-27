@@ -17,11 +17,7 @@ import sys
 import json
 
 " Se consideran que los ejes están en metros, por lo tanto las bolas que miden 51mm, tendrán un grosor de 0.051"
-
-thisFilePath = os.path.abspath(__file__)
-thisFolderPath = os.path.dirname(thisFilePath)
-jason = os.path.join(thisFolderPath, "config.json")
-#jason = str(sys.argv[1])
+jason = str(sys.argv[1])
 with open(jason,"r") as config:
     data = json.load(config)
 
